@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Quilt.Util\Quilt.Util.csproj" />
+    <ProjectReference Include="..\Quilt.Interop\Quilt.Interop.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

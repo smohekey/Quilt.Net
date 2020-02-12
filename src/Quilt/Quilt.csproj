@@ -4,7 +4,7 @@
     <ProjectReference Include="..\Quilt.GL\Quilt.GL.csproj" />
     <ProjectReference Include="..\Quilt.GLFW\Quilt.GLFW.csproj" />
     <ProjectReference Include="..\Quilt.GLEW\Quilt.GLEW.csproj" />
-    <ProjectReference Include="..\Quilt.Util\Quilt.Util.csproj" />
+    <ProjectReference Include="..\Quilt.Interop\Quilt.Interop.csproj" />
   </ItemGroup>
 
   <ItemGroup>

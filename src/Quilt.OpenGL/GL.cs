@@ -1,25 +1,29 @@
-﻿namespace Quilt.OpenGL {
+﻿using System;
+namespace Quilt.OpenGL {
+	using System.IO;
 	using System.Reflection;
+	using System.Runtime.InteropServices;
 	using Quilt.Interop;
 	using Quilt.OpenGL.Interop;
 
 	public static class GL {
-		private static readonly Interop.GL __gl;
-		private static readonly Interop.GLFW __glfw;
-
 		static GL() {
-			var importer = new InteropImporter();
+			var context = new InteropAssemblyLoadContextBuilder(AppContext.BaseDirectory)
+				.AddUnmanagedDllAliases("opengl32", "GL")
+				.Build();
 
-			__gl = importer.Import<Interop.GL>();
-			__glfw = importer.Import<Interop.GLFW>();
+			context.LoadFromAssemblyName(new AssemblyName("Quilt.OpenGL.Interop"));
+
 		}
 
 		public static void GetVersion(out int major, out int minor, out int revision) {
-			__glfw.GetVersion(out major, out minor, out revision);
+			major = minor = revision = 0;
+			//GLFW.GetVersion(out major, out minor, out revision); 
 		}
 
 		public static string GetVersionString() {
-			return __glfw.GetVersionString();
+			//return __glfw.GetVersionString();
+			return null;
 		}
 
 		public static Window CreateWindow() {

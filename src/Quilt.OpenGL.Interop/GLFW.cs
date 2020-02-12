@@ -1,26 +1,29 @@
-﻿namespace Quilt.OpenGL.Interop {
-  using System;
-  using System.Runtime.InteropServices;
-  using Quilt.Interop;
-  
-	[UnmanagedDll("glfw3", Prefix = "glfw", CallingConvention = CallingConvention.Cdecl)]
-  public abstract class GLFW {
-		[UnmanagedImport]
-		public abstract bool Init();
+﻿using System.Security;
+namespace Quilt.OpenGL.Interop {
+	using System;
+	using System.Runtime.InteropServices;
+	using Quilt.Interop;
 
-		[UnmanagedImport]
-		public abstract void Terminate();
+	public static class GLFW {
+		private const string DLL = "glfw3";
+		private const string PREFIX = "glfw";
 
-		[UnmanagedImport]
-		public abstract void GetVersion(out int major, out int minor, out int revision);
+		[DllImport(DLL, CallingConvention = CallingConvention.Cdecl, EntryPoint = PREFIX + nameof(Init)), SuppressUnmanagedCodeSecurity]
+		public static extern bool Init();
 
-		[UnmanagedImport(Prefix = "")]
-		protected abstract IntPtr glfwGetVersionString();
+		[DllImport(DLL, CallingConvention = CallingConvention.Cdecl, EntryPoint = PREFIX + nameof(Terminate)), SuppressUnmanagedCodeSecurity]
+		public static extern void Terminate();
 
-		public string GetVersionString() {
+		[DllImport(DLL, CallingConvention = CallingConvention.Cdecl, EntryPoint = PREFIX + nameof(GetVersion)), SuppressUnmanagedCodeSecurity]
+		public static extern void GetVersion(out int major, out int minor, out int revision);
+
+		[DllImport(DLL, CallingConvention = CallingConvention.Cdecl), SuppressUnmanagedCodeSecurity]
+		private static extern IntPtr glfwGetVersionString();
+
+		public static string GetVersionString() {
 			var ptr = glfwGetVersionString();
 
-			return MarshalExt.FromUTF8(ptr); 
+			return MarshalExt.FromUTF8(ptr);
 		}
 	}
 }

@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Quilt.Interop\Quilt.Interop.csproj" />
     <ProjectReference Include="..\Quilt.OpenGL.Interop\Quilt.OpenGL.Interop.csproj" />
+    <ProjectReference Include="..\Quilt.Unmanaged\Quilt.Unmanaged.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-namespace Quilt {
+﻿namespace Quilt {
 	using System.IO;
 	using System.Xml;
 	using Quilt.Xml;

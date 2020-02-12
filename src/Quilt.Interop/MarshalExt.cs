@@ -1,4 +1,4 @@
-﻿namespace Quilt.Util {
+﻿namespace Quilt.Interop {
 	using System;
 	using System.Diagnostics;
 	using System.Runtime.InteropServices;
@@ -19,7 +19,7 @@
 			}
 		}
 
-		public static byte[] ToUTF8ByteArray(string input) {
+		public static byte[]? ToUTF8ByteArray(string input) {
 			return input != null ? Encoding.UTF8.GetBytes(input) : null;
 		}
 

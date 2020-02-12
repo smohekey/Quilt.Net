@@ -61,7 +61,7 @@
 			}
 
 			private void GenerateConstructor() {
-				ConstructorInfo constructorInfo = _type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, __constructorParameterTypes, null);
+				var constructorInfo = _type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, __constructorParameterTypes, null);
 
 				var emit = Emit.BuildConstructor(__constructorParameterTypes, _typeBuilder, constructorInfo.Attributes);
 

@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quilt.Interop\Quilt.Interop.csproj" />
+    <ProjectReference Include="..\Quilt.OpenGL.Interop\Quilt.OpenGL.Interop.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,12 +1,10 @@
-namespace Quilt.Interop {
+﻿namespace Quilt.Interop {
 	using System.IO;
 	using System;
 	using System.Runtime.InteropServices;
-	using System.Collections.Generic;
-	using System.Linq;
 	using System.Reflection;
 	using System.Runtime.Loader;
-	using Microsoft.Extensions.Logging;
+	using System.Collections.Generic;
 
 	public class InteropAssemblyLoadContext : AssemblyLoadContext {
 		private static readonly string[] __prefixes;
@@ -28,16 +26,16 @@ namespace Quilt.Interop {
 			}
 		}
 
-		private readonly ILogger _logger;
 		private readonly InteropAssembly _interopAssembly;
+		private readonly Dictionary<string, List<string>> _unmanagedDllAliases;
 
-		public InteropAssemblyLoadContext(ILogger logger, InteropAssembly interopAssembly) {
-			_logger = logger;
+		public InteropAssemblyLoadContext(InteropAssembly interopAssembly, Dictionary<string, List<string>> unmanagedDllAliases) {
 			_interopAssembly = interopAssembly;
+			_unmanagedDllAliases = unmanagedDllAliases;
 		}
 
 		protected override Assembly Load(AssemblyName assemblyName) {
-			if (assemblyName == _interopAssembly.AssemblyName) {
+			if (assemblyName.Name == _interopAssembly.AssemblyName.Name) {
 				_interopAssembly.Assembly = Default.LoadFromAssemblyName(assemblyName);
 
 				return _interopAssembly.Assembly;
@@ -47,22 +45,44 @@ namespace Quilt.Interop {
 		}
 
 		protected override IntPtr LoadUnmanagedDll(string name) {
-			foreach (var path in __prefixes.SelectMany(prefix => __suffixes.Select(suffix => $"{prefix}{name}{suffix}"))) {
+			foreach ((string path, string alias) in GeneratePaths(name)) {
+				Console.WriteLine($"Attempting to load unmanaged dll {name} from path {path}.");
+
 				if (File.Exists(path)) {
 					try {
 						var handle = LoadUnmanagedDllFromPath(path);
-						var unmanagedDll = new UnmanagedDll(name, path, handle);
+						var unmanagedDll = new UnmanagedDll(name, alias, path, handle);
 
 						_interopAssembly._unmanagedDlls[name] = unmanagedDll;
 
 						return handle;
 					} catch (Exception e) {
-						_logger.LogDebug(e, "Failed loading unmanaged dll {Name} using path {Path}", name, path);
+
 					}
 				}
 			}
 
 			return base.LoadUnmanagedDll(name);
+		}
+
+		private IEnumerable<(string, string)> GeneratePaths(string name) {
+			foreach (var prefix in __prefixes) {
+				foreach (var alias in GetNames(name)) {
+					foreach (var suffix in __suffixes) {
+						yield return ($"{prefix}{alias}{suffix}", alias);
+					}
+				}
+			}
+		}
+
+		private IEnumerable<string> GetNames(string name) {
+			yield return name;
+
+			if (_unmanagedDllAliases.TryGetValue(name, out var aliases)) {
+				foreach (var alias in aliases) {
+					yield return alias;
+				}
+			}
 		}
 	}
 }

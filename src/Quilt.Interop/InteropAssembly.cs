@@ -1,4 +1,4 @@
-namespace Quilt.Interop {
+﻿namespace Quilt.Interop {
 	using System.Collections.Generic;
 	using System.Reflection;
 	using Microsoft.Extensions.Logging;
@@ -7,23 +7,20 @@ namespace Quilt.Interop {
 		internal readonly Dictionary<string, UnmanagedDll> _unmanagedDlls = new Dictionary<string, UnmanagedDll>();
 
 		public AssemblyName AssemblyName { get; }
-		public Assembly Assembly { get; internal set; }
+		public Assembly? Assembly { get; internal set; }
 
-		private InteropAssembly(AssemblyName assemblyName) {
+		internal InteropAssembly(AssemblyName assemblyName) {
 			AssemblyName = assemblyName;
 		}
 
-		public TAbstract Implement<TAbstract>() where TAbstract : class {
+		/*public TProxy CreateProxy<TProxy>() where TProxy : class {
+			return null;
+		}*/
 
-		}
+		public UnmanagedDll? GetUnmanagedDll(string name) {
+			_unmanagedDlls.TryGetValue(name, out var unmanagedDll);
 
-		public static InteropAssembly Load(ILogger logger, AssemblyName assemblyName) {
-			var interopAssembly = new InteropAssembly(assemblyName);
-			var context = new InteropAssemblyLoadContext(logger, interopAssembly);
-
-			context.LoadFromAssemblyName(assemblyName);
-
-			return interopAssembly;
+			return unmanagedDll;
 		}
 	}
 }

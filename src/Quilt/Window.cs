@@ -1,9 +1,9 @@
 ﻿namespace Quilt {
 	using System;
 
-	using Quilt.GLFW;
 	using Quilt.Xml;
 
+#if false
 	[Element(CoreNamespace.URI)]
 	public class Window : QuiltElement {
 		private Glfw.Window _window;
@@ -237,4 +237,5 @@
 
 		}
 	}
+#endif
 }

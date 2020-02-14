@@ -1,20 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\Quilt.Interop\Quilt.Interop.csproj" />
-    <ProjectReference Include="..\Quilt.Unmanaged\Quilt.Unmanaged.csproj" />
+    <PackageReference Include="Ultz.Native.GLFW" Version="3.3.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="glfw3.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProjectReference Include="..\Quilt.Interop\Quilt.Interop.csproj" />
+    <ProjectReference Include="..\Quilt.Unmanaged\Quilt.Unmanaged.csproj" />
   </ItemGroup>
 
 </Project>

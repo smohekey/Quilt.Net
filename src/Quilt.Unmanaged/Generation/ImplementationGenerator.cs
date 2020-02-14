@@ -136,7 +136,7 @@
 				var parameterInfos = methodInfo.GetParameters();
 				var parameterTypes = parameterInfos.Select(p => p.ParameterType).ToArray();
 
-				var (delegateType, delegateInvokeMethod) = GenerateDelegateType(typeBuilder, methodInfo, callingConvention, charSet, setLastError, methodInfo.GetCustomAttribute<SuppressUnmanagedCodeSecurityAttribute>() != null, parameterInfos, parameterTypes);
+				var (delegateType, delegateInvokeMethod) = GenerateDelegateType(typeBuilder, methodInfo, callingConvention, charSet, setLastError, methodInfo.GetCustomAttribute<SuppressUnmanagedCodeSecurityAttribute>() != null, parameterInfos);
 				var delegateFieldBuilder = GenerateDelegateField(typeBuilder, methodInfo, delegateType);
 
 				var emit = Emit.BuildInstanceMethod(methodInfo.ReturnType, parameterTypes, typeBuilder, methodInfo.Name, methodInfo.Attributes & ~MethodAttributes.Abstract);
@@ -156,7 +156,7 @@
 					}
 				}
 
-				  emit.Call(delegateInvokeMethod);
+				emit.Call(delegateInvokeMethod);
 
 				if (methodInfo.ReturnType == __stringType) {
 					var unmanagedType = GetStringParameterUnmanagedType(methodInfo.ReturnParameter);
@@ -176,7 +176,7 @@
 
 			private Emit GenerateConstructor(TypeBuilder typeBuilder, FieldBuilder libraryField) {
 				var emit = Emit.BuildConstructor(__constructorParameterTypes, typeBuilder, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig, CallingConventions.HasThis);
-				
+
 				emit.LoadArgument(0);
 				emit.Call(__objectConstructor);
 				emit.LoadArgument(0);
@@ -186,7 +186,7 @@
 				return emit;
 			}
 
-			private (Type, MethodInfo) GenerateDelegateType(TypeBuilder typeBuilder, MethodInfo methodInfo, CallingConvention callingConvention, CharSet charSet, bool setLastError, bool suppressCodeSecurity, ParameterInfo[] parameters, Type[] parameterTypes) {
+			private (Type, MethodInfo) GenerateDelegateType(TypeBuilder typeBuilder, MethodInfo methodInfo, CallingConvention callingConvention, CharSet charSet, bool setLastError, bool suppressCodeSecurity, ParameterInfo[] parameterInfos) {
 				var name = $"{methodInfo.Name}Delegate";
 
 				//var delegateTypeBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.AnsiClass | TypeAttributes.AutoClass, typeof(MulticastDelegate));
@@ -214,6 +214,10 @@
 
 				delegateConstructorBuilder.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
 
+				var parameterTypes = parameterInfos.Select(p =>
+					p.ParameterType == __stringType ? __intPtrType : p.ParameterType
+				).ToArray();
+
 				var returnType = methodInfo.ReturnType == __stringType ? __intPtrType : methodInfo.ReturnType;
 
 				var delegateInvokeMethodBuilder = delegateTypeBuilder.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Virtual, returnType, parameterTypes);
@@ -240,7 +244,7 @@
 
 				var delegateType = delegateTypeBuilder.CreateType();
 
-				return (delegateType, delegateType.GetMethod("Invoke"));
+				return (delegateType, delegateType.GetMethod("Invoke")!);
 			}
 
 			private FieldBuilder GenerateDelegateField(TypeBuilder typeBuilder, MethodInfo methodInfo, Type delegateType) {
@@ -270,7 +274,7 @@
 					namedFields.Select(f => f.TypedValue.Value).ToArray()
 				);
 			}
-			
+
 			private UnmanagedType GetStringParameterUnmanagedType(ParameterInfo parameter) {
 				return parameter.GetCustomAttribute<MarshalAsAttribute>()?.Value ?? UnmanagedType.LPStr;
 			}

@@ -9,7 +9,7 @@
 		static void Main(string[] args) {
 			var application = Application.Load("Application.xml");
 
-			if(!UnmanagedLibrary.TryLoad("opengl32", out var unmanagedGL, "GL")) {
+			if(!UnmanagedLibrary.TryLoad("opengl", out var unmanagedGL, "opengl32", "GL")) {
 				Console.WriteLine("Couldn't open unmanaged library opengl.");
 				Environment.Exit(-1);
 			}
@@ -22,6 +22,8 @@
 			if (!unmanagedGLFW.TryQueryInterface<IGLFW>(out var glfw)) {
 				Console.WriteLine("Couldn't get managed interface for glfw.");
 			}
+
+			glfw.Init();
 
 			glfw.GetVersion(out var major, out var minor, out var revision);
 

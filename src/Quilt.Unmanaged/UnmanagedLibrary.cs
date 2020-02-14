@@ -1,13 +1,14 @@
 ﻿namespace Quilt.Unmanaged {
 	using System;
-  using System.Collections.Generic;
-  using System.Diagnostics.CodeAnalysis;
-  using System.Linq;
-  using System.Runtime.InteropServices;
-  
-  using Quilt.Unmanaged.Generation;
+	using System.Collections.Generic;
+	using System.Diagnostics.CodeAnalysis;
+	using System.Linq;
+	using System.Reflection;
+	using System.Runtime.InteropServices;
+	using System.Runtime.Loader;
+	using Quilt.Unmanaged.Generation;
 
-  public class UnmanagedLibrary {
+	public class UnmanagedLibrary {
 		private static readonly string[] __prefixes;
 		private static readonly string[] __suffixes;
 
@@ -66,39 +67,63 @@
 				__unmanagedInterfaces[interfaceType] = implementationType;
 			}
 
-			@interface = (T)Activator.CreateInstance(implementationType, this);
+			@interface = (T)Activator.CreateInstance(implementationType, this)!;
 
 			return true;
 		}
 
-		public static bool TryLoad(string name, [NotNullWhen(returnValue: false)] out UnmanagedLibrary? unmanagedLibrary, params string[] aliases) {
-			if (!__unmanagedLibraries.TryGetValue(name, out unmanagedLibrary)) {
-				var loader = Loader.Instance;
+		public static bool TryLoad(string name, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary, params string[] aliases) {
+			if (__unmanagedLibraries.TryGetValue(name, out unmanagedLibrary)) {
+				return false;
+			}
 
-				foreach (var candidate in GeneratePaths(name, aliases)) {
-					var handle = loader.LoadLibrary(candidate);
+			var loader = Loader.Instance;
 
-					if (handle != IntPtr.Zero) {
-						__unmanagedLibraries[name] = unmanagedLibrary = new UnmanagedLibrary(loader, name, candidate, loader.GetLibraryPath(handle), handle);
+			var resolver = new AssemblyDependencyResolver(AppDomain.CurrentDomain.BaseDirectory!);
 
+			foreach (var candidate in GenerateCandidates(name, aliases)) {
+				var path = resolver.ResolveUnmanagedDllToPath(candidate);
+
+				if (path != null) {
+					if (TryLoadFromPath(loader, name, candidate, path, out unmanagedLibrary)) {
+						return true;
+					}
+				} else {
+					if (TryLoadFromPath(loader, name, candidate, candidate, out unmanagedLibrary)) {
 						return true;
 					}
 				}
 			}
 
-			unmanagedLibrary = null;
-
 			return false;
 		}
 
-		private static IEnumerable<string> GeneratePaths(string name, string[] aliases) {
-			foreach (var prefix in __prefixes) {
+		private static bool TryLoadFromPath(Loader loader, string name, string candidate, string path, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary) {
+			Console.WriteLine($"Attempting to load {name} from {path}.");
+
+			var handle = loader.LoadLibrary(path);
+
+			if (handle == IntPtr.Zero) {
+				unmanagedLibrary = null;
+			} else {
+				unmanagedLibrary = new UnmanagedLibrary(loader, name, candidate, loader.GetLibraryPath(handle), handle);
+
+				__unmanagedLibraries[name] = unmanagedLibrary;
+			}
+
+			return unmanagedLibrary != null;
+		}
+
+		private static IEnumerable<string> GenerateCandidates(string name, string[] aliases) {
+			return aliases.Prepend(name);
+
+			/*foreach (var prefix in __prefixes) {
 				foreach (var alias in aliases.Prepend(name)) {
 					foreach (var suffix in __suffixes) {
 						yield return $"{prefix}{alias}{suffix}";
 					}
 				}
-			}
+			}*/
 		}
 	}
 }

@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+	
   <ItemGroup>
     <PackageReference Include="Sigil" Version="5.0.0" />
   </ItemGroup>
@@ -7,10 +12,5 @@
   <ItemGroup>
     <ProjectReference Include="..\Quilt.OpenGL\Quilt.OpenGL.csproj" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
 
 </Project>

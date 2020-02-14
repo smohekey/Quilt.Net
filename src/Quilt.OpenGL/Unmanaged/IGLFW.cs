@@ -9,6 +9,6 @@
 		void GetVersion(out int major, out int minor, out int revision);
 		string GetVersionString();
 
-		Window? CreateWindow(int width, int height, string title, Monitor? monitor = null, Window? share = null);
+		Window CreateWindow(int width, int height, string title, Monitor monitor = default, Window share = default);
 	}
 }

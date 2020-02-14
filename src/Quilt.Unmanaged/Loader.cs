@@ -1,4 +1,4 @@
-namespace Quilt.Unmanaged {
+﻿namespace Quilt.Unmanaged {
 	using System.Runtime.InteropServices;
 	using System;
 
@@ -19,14 +19,18 @@ namespace Quilt.Unmanaged {
 
 		private readonly Func<string, IntPtr> _loadLibrary;
 		private readonly Func<IntPtr, string, IntPtr> _loadSymbol;
+		private readonly Func<IntPtr, string?> _getLibraryPath;
 
-		protected Loader(Func<string, IntPtr> loadLibrary, Func<IntPtr, string, IntPtr> loadSymbol) {
+		protected Loader(Func<string, IntPtr> loadLibrary, Func<IntPtr, string, IntPtr> loadSymbol, Func<IntPtr, string> getLibraryPath) {
 			_loadLibrary = loadLibrary;
 			_loadSymbol = loadSymbol;
+			_getLibraryPath = getLibraryPath;
 		}
 
 		public IntPtr LoadLibrary(string name) => _loadLibrary(name);
 
 		public IntPtr LoadSymbol(IntPtr library, string name) => _loadSymbol(library, name);
+
+		public string? GetLibraryPath(IntPtr library) => _getLibraryPath(library);
 	}
 }

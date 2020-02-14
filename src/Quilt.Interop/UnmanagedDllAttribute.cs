@@ -2,8 +2,8 @@
 	using System;
   using System.Runtime.InteropServices;
 
-  [AttributeUsage(AttributeTargets.Class)]
-	public class UnmanagedDllAttribute : Attribute {
+  [AttributeUsage(AttributeTargets.Interface)]
+	public class UnmanagedInterface : Attribute {
 		public string Name { get; }
 
 		public string[] Aliases { get; }
@@ -14,7 +14,7 @@
 
 		public string Prefix { get; set; } = "";
 
-		public UnmanagedDllAttribute(string name, params string[] aliases) {
+		public UnmanagedInterface(string name, params string[] aliases) {
 			Name = name;
 			Aliases = aliases;
 		}

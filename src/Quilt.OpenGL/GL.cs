@@ -3,17 +3,11 @@ namespace Quilt.OpenGL {
 	using System.IO;
 	using System.Reflection;
 	using System.Runtime.InteropServices;
-	using Quilt.Interop;
-	using Quilt.OpenGL.Interop;
-
+	
 	public static class GL {
+
 		static GL() {
-			var context = new InteropAssemblyLoadContextBuilder(AppContext.BaseDirectory)
-				.AddUnmanagedDllAliases("opengl32", "GL")
-				.Build();
-
-			context.LoadFromAssemblyName(new AssemblyName("Quilt.OpenGL.Interop"));
-
+			
 		}
 
 		public static void GetVersion(out int major, out int minor, out int revision) {

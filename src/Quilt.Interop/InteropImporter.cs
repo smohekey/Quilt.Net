@@ -18,10 +18,10 @@
 					throw new ArgumentException("Type must be abstract.", nameof(TAbstract));
 				}
 
-				var unmanagedAttribute = type.GetCustomAttribute<UnmanagedDllAttribute>();
+				var unmanagedAttribute = type.GetCustomAttribute<UnmanagedInterface>();
 
 				if (unmanagedAttribute == null) {
-					throw new ArgumentException($"Type must have the {nameof(UnmanagedDllAttribute)}");
+					throw new ArgumentException($"Type must have the {nameof(UnmanagedInterface)}");
 				}
 
 				if (!UnmanagedDll.TryLoad(unmanagedAttribute.Name, out var unmanagedDll, unmanagedAttribute.Aliases)) {

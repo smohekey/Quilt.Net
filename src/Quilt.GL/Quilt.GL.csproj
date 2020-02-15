@@ -8,14 +8,14 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ultz.Native.GLFW" Version="3.3.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Quilt.Interop\Quilt.Interop.csproj" />
     <ProjectReference Include="..\Quilt.Unmanaged\Quilt.Unmanaged.csproj" />
   </ItemGroup>
 

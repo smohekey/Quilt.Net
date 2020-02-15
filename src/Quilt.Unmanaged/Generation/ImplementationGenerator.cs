@@ -30,7 +30,7 @@
 
 		private class Context {
 			private static readonly Type __objectType = typeof(object);
-			private static readonly ConstructorInfo __objectConstructor = __objectType.GetConstructor(Array.Empty<Type>());
+			private static readonly ConstructorInfo __objectConstructor = __objectType.GetConstructor(Array.Empty<Type>())!;
 
 			private static readonly Type __stringType = typeof(string);
 			private static readonly Type __intPtrType = typeof(IntPtr);
@@ -57,16 +57,16 @@
 
 			static Context() {
 				__stringToPtrMethods = new Dictionary<UnmanagedType, MethodInfo> {
-					{ UnmanagedType.BStr, __marshalType.GetMethod(nameof(Marshal.StringToBSTR), new[] { __stringType }) },
-					{ UnmanagedType.LPWStr, __marshalType.GetMethod(nameof(Marshal.StringToHGlobalUni), new[] { __stringType }) },
-					{ UnmanagedType.LPStr, __marshalType.GetMethod(nameof(Marshal.StringToHGlobalAnsi), new[] { __stringType }) }
+					{ UnmanagedType.BStr, __marshalType.GetMethod(nameof(Marshal.StringToBSTR), new[] { __stringType })! },
+					{ UnmanagedType.LPWStr, __marshalType.GetMethod(nameof(Marshal.StringToHGlobalUni), new[] { __stringType })! },
+					{ UnmanagedType.LPStr, __marshalType.GetMethod(nameof(Marshal.StringToHGlobalAnsi), new[] { __stringType })! }
 				};
 
 				__ptrToStringMethods = new Dictionary<UnmanagedType, MethodInfo> {
-					{ UnmanagedType.BStr, __marshalType.GetMethod(nameof(Marshal.PtrToStringBSTR), new[] { __intPtrType }) },
-					{ UnmanagedType.LPWStr, __marshalType.GetMethod(nameof(Marshal.PtrToStringUni), new [] { __intPtrType}) },
-					{ UnmanagedType.LPStr, __marshalType.GetMethod(nameof(Marshal.PtrToStringAnsi), new [] { __intPtrType}) },
-					{ UnmanagedType.LPTStr, __marshalType.GetMethod(nameof(Marshal.PtrToStringAuto), new[] { __intPtrType}) }
+					{ UnmanagedType.BStr, __marshalType.GetMethod(nameof(Marshal.PtrToStringBSTR), new[] { __intPtrType })! },
+					{ UnmanagedType.LPWStr, __marshalType.GetMethod(nameof(Marshal.PtrToStringUni), new [] { __intPtrType})! },
+					{ UnmanagedType.LPStr, __marshalType.GetMethod(nameof(Marshal.PtrToStringAnsi), new [] { __intPtrType})! },
+					{ UnmanagedType.LPTStr, __marshalType.GetMethod(nameof(Marshal.PtrToStringAuto), new[] { __intPtrType})! }
 				};
 			}
 
@@ -74,9 +74,10 @@
 			private readonly Type _interfaceType;
 			private readonly Type? _baseType;
 
-			private AssemblyBuilder _assemblyBuilder;
-			private ModuleBuilder _moduleBuilder;
-
+			private readonly Dictionary<string, int> _delegateNameCounts = new Dictionary<string, int>();
+			private readonly AssemblyBuilder _assemblyBuilder;
+			private readonly ModuleBuilder _moduleBuilder;
+			
 			public Context(UnmanagedLibrary library, Type interfaceType, Type? baseType) {
 				_library = library;
 				_interfaceType = interfaceType;
@@ -189,6 +190,16 @@
 			private (Type, MethodInfo) GenerateDelegateType(TypeBuilder typeBuilder, MethodInfo methodInfo, CallingConvention callingConvention, CharSet charSet, bool setLastError, bool suppressCodeSecurity, ParameterInfo[] parameterInfos) {
 				var name = $"{methodInfo.Name}Delegate";
 
+				if(!_delegateNameCounts.TryGetValue(name, out var count)) {
+					_delegateNameCounts[name] = 1;
+				} else {
+					count++;
+
+					_delegateNameCounts[name] = count;
+
+					name = $"{name}{count}";
+				}
+
 				//var delegateTypeBuilder = typeBuilder.DefineNestedType(name, TypeAttributes.Class | TypeAttributes.NestedPublic | TypeAttributes.Sealed | TypeAttributes.AnsiClass | TypeAttributes.AutoClass, typeof(MulticastDelegate));
 				var delegateTypeBuilder = _moduleBuilder.DefineType(name, TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.AnsiClass | TypeAttributes.AutoClass, typeof(MulticastDelegate));
 
@@ -252,13 +263,26 @@
 			}
 
 			private void GenerateDelegateFieldConstructorInitialization(Emit emit, FieldBuilder libraryFieldBuilder, Type delegateType, FieldBuilder delegateFieldBuilder, string unmanagedName) {
-				emit.LoadArgument(0);
+				var symbolLocal = emit.DeclareLocal<IntPtr>();
+				var failLabel = emit.DefineLabel();
+				var successLabel = emit.DefineLabel();
+
 				emit.LoadArgument(0);
 				emit.LoadField(libraryFieldBuilder);
 				emit.LoadConstant(unmanagedName);
 				emit.CallVirtual(__getSymbolMethod);
+				emit.StoreLocal(symbolLocal);
+				emit.LoadLocal(symbolLocal);
+				emit.LoadNull();
+				emit.BranchIfEqual(failLabel);
+				emit.LoadArgument(0);
+				emit.LoadLocal(symbolLocal);
 				emit.Call(__getDelegateForFunctionPointerMethod.MakeGenericMethod(delegateType));
 				emit.StoreField(delegateFieldBuilder);
+				emit.Branch(successLabel);
+				emit.MarkLabel(failLabel);
+				emit.WriteLine($"Couldn't load symbol {unmanagedName}.");
+				emit.MarkLabel(successLabel);
 			}
 
 			private static CustomAttributeBuilder CreateCustomAttributeBuilder(CustomAttributeData customAttribute) {
@@ -269,9 +293,9 @@
 					customAttribute.Constructor,
 					customAttribute.ConstructorArguments.Select(a => a.Value).ToArray(),
 					namedProperties.Select(p => p.MemberInfo).Cast<PropertyInfo>().ToArray(),
-					namedProperties.Select(p => p.TypedValue.Value).ToArray(),
+					namedProperties.Select(p => p.TypedValue.Value).ToArray()!,
 					namedFields.Select(f => f.MemberInfo).Cast<FieldInfo>().ToArray(),
-					namedFields.Select(f => f.TypedValue.Value).ToArray()
+					namedFields.Select(f => f.TypedValue.Value).ToArray()!
 				);
 			}
 

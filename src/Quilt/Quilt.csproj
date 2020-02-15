@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Quilt.OpenGL\Quilt.OpenGL.csproj" />
+    <ProjectReference Include="..\Quilt.GLFW\Quilt.GLFW.csproj" />
   </ItemGroup>
 
 </Project>

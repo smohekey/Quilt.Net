@@ -32,7 +32,7 @@
 			}
 		}
 
-		private readonly Loader _loader;
+		private readonly UnmanagedLoader _loader;
 
 		public string Name { get; }
 
@@ -42,7 +42,7 @@
 
 		public IntPtr Handle { get; }
 
-		private UnmanagedLibrary(Loader loader, string name, string nameUsed, string? path, IntPtr handle) {
+		private UnmanagedLibrary(UnmanagedLoader loader, string name, string nameUsed, string? path, IntPtr handle) {
 			_loader = loader;
 			Name = name;
 			NameUsed = nameUsed;
@@ -73,11 +73,15 @@
 		}
 
 		public static bool TryLoad(string name, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary, params string[] aliases) {
+			return TryLoad(name, out unmanagedLibrary, UnmanagedLoader.Instance, aliases);
+		}
+
+		public static bool TryLoad(string name, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary, UnmanagedLoader? loader = null, params string[] aliases) {
 			if (__unmanagedLibraries.TryGetValue(name, out unmanagedLibrary)) {
 				return false;
 			}
 
-			var loader = Loader.Instance;
+			loader = loader ?? UnmanagedLoader.Instance;
 
 			var resolver = new AssemblyDependencyResolver(AppDomain.CurrentDomain.BaseDirectory!);
 
@@ -98,7 +102,7 @@
 			return false;
 		}
 
-		private static bool TryLoadFromPath(Loader loader, string name, string candidate, string path, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary) {
+		private static bool TryLoadFromPath(UnmanagedLoader loader, string name, string candidate, string path, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary) {
 			Console.WriteLine($"Attempting to load {name} from {path}.");
 
 			var handle = loader.LoadLibrary(path);

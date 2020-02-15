@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Quilt.GL\Quilt.GL.csproj" />
     <ProjectReference Include="..\..\src\Quilt\Quilt.csproj" />
   </ItemGroup>
 

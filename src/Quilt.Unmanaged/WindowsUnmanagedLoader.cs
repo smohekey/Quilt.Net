@@ -3,10 +3,14 @@
 	using System.Runtime.InteropServices;
   using System.Text;
 
-  class WindowsLoader : Loader {
-		internal WindowsLoader() : base(Kernel32.LoadLibrary, Kernel32.GetProcAddress, Kernel32.GetLibraryPath) {
+  class WindowsUnmanagedLoader : UnmanagedLoader {
+		internal WindowsUnmanagedLoader() {
 
 		}
+
+		public override IntPtr LoadLibrary(string name) => Kernel32.LoadLibrary(name);
+		public override IntPtr LoadSymbol(IntPtr library, string name) => Kernel32.GetProcAddress(library, name);
+		public override string? GetLibraryPath(IntPtr library) => Kernel32.GetLibraryPath(library);
 
 		private static class Kernel32 {
 			private const string NAME = "Kernel32";

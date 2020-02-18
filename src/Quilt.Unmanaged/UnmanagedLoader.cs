@@ -3,7 +3,7 @@
 	using System;
 
 	public abstract class UnmanagedLoader {
-		private static readonly Lazy<UnmanagedLoader> __instance = new Lazy<UnmanagedLoader>(() => {
+		private static readonly Lazy<UnmanagedLoader> __default = new Lazy<UnmanagedLoader>(() => {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
 				return new WindowsUnmanagedLoader();
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
@@ -15,7 +15,7 @@
 			}
 		});
 
-		public static UnmanagedLoader Instance => __instance.Value;
+		public static UnmanagedLoader Default => __default.Value;
 
 		public abstract IntPtr LoadLibrary(string name);
 

@@ -10,22 +10,8 @@
 	using Sigil.NonGeneric;
 
 	class ImplementationGenerator {
-		private readonly Dictionary<Type, Type> _implementedTypes = new Dictionary<Type, Type>();
-
-		public bool TryGenerate<TInterface, TBaseClass>(UnmanagedLibrary library, [NotNullWhen(true)] out Type? type) where TBaseClass : class {
-			return TryGenerate(library, typeof(TInterface), typeof(TBaseClass), out type);
-		}
-
-		public bool TryGenerate<TInterface>(UnmanagedLibrary library, [NotNullWhen(true)] out Type? type) {
-			return TryGenerate(library, typeof(TInterface), null, out type);
-		}
-
-		public bool TryGenerate(UnmanagedLibrary library, Type interfaceType, Type? baseType, [NotNullWhen(true)] out Type? type) {
-			if (_implementedTypes.TryGetValue(interfaceType, out type)) {
-				return true;
-			}
-
-			return new Context(library, interfaceType, baseType).TryGenerate(out type);
+		public Type Generate<T>(UnmanagedLibrary library) {
+			return new Context(library, typeof(T)).Generate();
 		}
 
 		private class Context {
@@ -36,13 +22,15 @@
 			private static readonly Type __intPtrType = typeof(IntPtr);
 
 			private static readonly Type __unmanagedLibraryType = typeof(UnmanagedLibrary);
-			private static readonly MethodInfo __getSymbolMethod = __unmanagedLibraryType.GetMethod(nameof(UnmanagedLibrary.GetSymbol), new[] { __stringType })!;
+			private static readonly MethodInfo __getSymbolMethod = __unmanagedLibraryType.GetMethod(nameof(UnmanagedLibrary.LoadSymbol), new[] { __stringType })!;
+
+			private static readonly Type __unmanagedObjectType = typeof(UnmanagedObject);
+			private static readonly MethodInfo __loadSymbolMethod = __unmanagedObjectType.GetMethod(UnmanagedObject.LOAD_SYMBOL_NAME, BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { __stringType }, null)!;
 
 			private static readonly Type __marshalType = typeof(Marshal);
 			private static readonly MethodInfo __getDelegateForFunctionPointerMethod = __marshalType.GetMethod(nameof(Marshal.GetDelegateForFunctionPointer), new[] { __intPtrType })!;
 
 			private static readonly Type __unmanagedFunctionPointerType = typeof(UnmanagedFunctionPointerAttribute);
-			private static readonly Type[] __constructorParameterTypes = new[] { typeof(UnmanagedLibrary) };
 			private static readonly ConstructorInfo __unmanagedFunctionPointerConstructor = __unmanagedFunctionPointerType.GetConstructor(new[] { typeof(CallingConvention) })!;
 			private static readonly FieldInfo __charSetField = __unmanagedFunctionPointerType.GetField(nameof(UnmanagedFunctionPointerAttribute.CharSet))!;
 			private static readonly FieldInfo __setLastErrorField = __unmanagedFunctionPointerType.GetField(nameof(UnmanagedFunctionPointerAttribute.SetLastError))!;
@@ -71,62 +59,60 @@
 			}
 
 			private readonly UnmanagedLibrary _library;
-			private readonly Type _interfaceType;
-			private readonly Type? _baseType;
+			private readonly Type _type;
 
 			private readonly Dictionary<string, int> _delegateNameCounts = new Dictionary<string, int>();
 			private readonly AssemblyBuilder _assemblyBuilder;
 			private readonly ModuleBuilder _moduleBuilder;
-			
-			public Context(UnmanagedLibrary library, Type interfaceType, Type? baseType) {
+
+			public Context(UnmanagedLibrary library, Type type) {
 				_library = library;
-				_interfaceType = interfaceType;
-				_baseType = baseType;
+				_type = type;
 
 				var buffer = new byte[16];
 
 				__random.NextBytes(buffer);
 
-				var assemblyName = new AssemblyName($"{_interfaceType.Assembly.GetName().Name}.x{BitConverter.ToString(buffer).Replace("-", "")}");
-				_assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
+				var assemblyName = new AssemblyName($"{_type.Assembly.GetName().Name}.x{BitConverter.ToString(buffer).Replace("-", "")}");
+				_assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 				_moduleBuilder = _assemblyBuilder.DefineDynamicModule(assemblyName.Name!);
 			}
 
-			public bool TryGenerate([NotNullWhen(true)] out Type? type) {
-				if (!_interfaceType.IsInterface) {
-					throw new ArgumentException("Type must be an interface.", _interfaceType.Name);
+			public Type Generate() {
+				if (!_type.IsAbstract) {
+					throw new ArgumentException($"Type '{_type.Name}' must be abstract.");
 				}
 
-				var interfaceAttribute = _interfaceType.GetCustomAttribute<UnmanagedInterfaceAttribute>();
+				var interfaceAttribute = _type.GetCustomAttribute<UnmanagedObjectAttribute>(true);
 
 				if (interfaceAttribute == null) {
-					throw new ArgumentException($"Type must have the {nameof(UnmanagedInterfaceAttribute)}");
+					throw new ArgumentException($"Type '{_type.Name}' must have the {nameof(UnmanagedObjectAttribute)}");
 				}
 
 				var buffer = new byte[16];
 
 				__random.NextBytes(buffer);
 
-				var typeBuilder = _moduleBuilder.DefineType($"{_interfaceType.Namespace}.x{BitConverter.ToString(buffer).Replace("-", "")}.{_interfaceType.Name}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class, _baseType);
+				var typeBuilder = _moduleBuilder.DefineType($"{_type.Namespace}.x{BitConverter.ToString(buffer).Replace("-", "")}.{_type.Name}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class, _type);
 
-				typeBuilder.AddInterfaceImplementation(_interfaceType);
+				GenerateConstructors(typeBuilder);
 
-				var libraryFieldBuilder = GenerateLibraryField(typeBuilder);
-				var constructorEmit = GenerateConstructor(typeBuilder, libraryFieldBuilder);
+				var baseLoadDelegatesMethod = _type.GetMethod(UnmanagedObject.LOAD_DELEGATES_NAME, BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-				foreach (var methodInfo in _interfaceType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(m => m.IsAbstract)) {
-					GenerateMethod(interfaceAttribute, typeBuilder, libraryFieldBuilder, constructorEmit, methodInfo);
+				var loadDelegatesEmit = GenerateLoadDelegatesMethod(typeBuilder);
+
+				foreach (var methodInfo in _type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(m => m.IsAbstract && m != baseLoadDelegatesMethod)) {
+					GenerateMethod(interfaceAttribute, typeBuilder, loadDelegatesEmit, methodInfo);
 				}
 
-				constructorEmit.Return();
-				constructorEmit.CreateConstructor();
+				loadDelegatesEmit.Return();
 
-				type = typeBuilder.CreateType();
+				typeBuilder.DefineMethodOverride(loadDelegatesEmit.CreateMethod(), baseLoadDelegatesMethod);
 
-				return type != null;
+				return typeBuilder.CreateType()!;
 			}
 
-			private void GenerateMethod(UnmanagedInterfaceAttribute interfaceAttribute, TypeBuilder typeBuilder, FieldBuilder libraryFieldBuilder, Emit constructorEmit, MethodInfo methodInfo) {
+			private void GenerateMethod(UnmanagedObjectAttribute interfaceAttribute, TypeBuilder typeBuilder, Emit loadDelegatesEmit, MethodInfo methodInfo) {
 				var methodAttribute = methodInfo.GetCustomAttribute<UnmanagedMethodAttribute>();
 
 				var callingConvention = methodAttribute?.CallingConvention ?? interfaceAttribute.CallingConvention;
@@ -166,31 +152,46 @@
 				}
 
 				emit.Return();
-				emit.CreateMethod();
 
-				GenerateDelegateFieldConstructorInitialization(constructorEmit, libraryFieldBuilder, delegateType, delegateFieldBuilder, unmanagedName);
+				typeBuilder.DefineMethodOverride(emit.CreateMethod(), methodInfo);
+
+				GenerateDelegateFieldLoad(loadDelegatesEmit, delegateType, delegateFieldBuilder, unmanagedName);
 			}
 
-			private FieldBuilder GenerateLibraryField(TypeBuilder typeBuilder) {
-				return typeBuilder.DefineField("_library", __unmanagedLibraryType, FieldAttributes.Private | FieldAttributes.InitOnly);
-			}
-
-			private Emit GenerateConstructor(TypeBuilder typeBuilder, FieldBuilder libraryField) {
-				var emit = Emit.BuildConstructor(__constructorParameterTypes, typeBuilder, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig, CallingConventions.HasThis);
-
-				emit.LoadArgument(0);
-				emit.Call(__objectConstructor);
-				emit.LoadArgument(0);
-				emit.LoadArgument(1);
-				emit.StoreField(libraryField);
+			private Emit GenerateLoadDelegatesMethod(TypeBuilder typeBuilder) {
+				var emit = Emit.BuildInstanceMethod(typeof(void), Array.Empty<Type>(), typeBuilder, UnmanagedObject.LOAD_DELEGATES_NAME, MethodAttributes.Virtual | MethodAttributes.Family);
 
 				return emit;
+			}
+
+			private void GenerateConstructors(TypeBuilder typeBuilder) {
+				var constructors = _type.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance);
+
+				foreach (var constructor in constructors) {
+					var parameters = constructor.GetParameters();
+
+					if (parameters.Length == 0 || parameters[0].ParameterType != typeof(UnmanagedLibrary)) {
+						continue;
+					}
+
+					var emit = Emit.BuildConstructor(parameters.Select(p => p.ParameterType).ToArray(), typeBuilder, MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig, CallingConventions.HasThis);
+
+					emit.LoadArgument(0);
+
+					for (ushort i = 1; i <= parameters.Length; i++) {
+						emit.LoadArgument(i);
+					}
+
+					emit.Call(constructor);
+					emit.Return();
+					emit.CreateConstructor();
+				}
 			}
 
 			private (Type, MethodInfo) GenerateDelegateType(TypeBuilder typeBuilder, MethodInfo methodInfo, CallingConvention callingConvention, CharSet charSet, bool setLastError, bool suppressCodeSecurity, ParameterInfo[] parameterInfos) {
 				var name = $"{methodInfo.Name}Delegate";
 
-				if(!_delegateNameCounts.TryGetValue(name, out var count)) {
+				if (!_delegateNameCounts.TryGetValue(name, out var count)) {
 					_delegateNameCounts[name] = 1;
 				} else {
 					count++;
@@ -262,15 +263,14 @@
 				return typeBuilder.DefineField($"{methodInfo.Name}_delegate", delegateType, FieldAttributes.Private | FieldAttributes.InitOnly);
 			}
 
-			private void GenerateDelegateFieldConstructorInitialization(Emit emit, FieldBuilder libraryFieldBuilder, Type delegateType, FieldBuilder delegateFieldBuilder, string unmanagedName) {
+			private void GenerateDelegateFieldLoad(Emit emit, Type delegateType, FieldBuilder delegateFieldBuilder, string unmanagedName) {
 				var symbolLocal = emit.DeclareLocal<IntPtr>();
 				var failLabel = emit.DefineLabel();
 				var successLabel = emit.DefineLabel();
 
 				emit.LoadArgument(0);
-				emit.LoadField(libraryFieldBuilder);
 				emit.LoadConstant(unmanagedName);
-				emit.CallVirtual(__getSymbolMethod);
+				emit.CallVirtual(__loadSymbolMethod);
 				emit.StoreLocal(symbolLocal);
 				emit.LoadLocal(symbolLocal);
 				emit.LoadNull();

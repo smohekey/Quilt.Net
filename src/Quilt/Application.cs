@@ -1,32 +1,32 @@
 ﻿namespace Quilt {
+	using System;
+	using System.Collections.Generic;
 	using System.IO;
+	using System.Linq;
 	using System.Xml;
-	using Quilt.Xml;
+	using Quilt.GLFW;
+	using Quilt.UI;
 
-	[Element(CoreNamespace.URI)]
-	public class Application : QuiltElement {
-		protected Application(string prefix, string localName, string namespaceURI, QuiltDocument document) : base(prefix, localName, namespaceURI, document) {
+	public class Application {
+		private static readonly Lazy<Application> __instance = new Lazy<Application>(() => new Application());
+		internal static Application Instance => __instance.Value;
+
+		internal readonly GLFWContext _glfw;
+		internal readonly HashSet<Window> _windows;
+
+		private Application() {
+			_glfw = GLFWContext.Create();
+			_windows = new HashSet<Window>();
 		}
 
-
-		public static Application Load(XmlReader reader) {
-			var document = new QuiltDocument();
-
-			document.Load(reader);
-
-			return (Application)document.DocumentElement;
+		private void RunInternal() {
+			while (_windows.Any()) {
+				_glfw.WaitEvents();
+			}
 		}
 
-		public static Application Load(Stream stream) {
-			using var reader = new XmlTextReader(stream);
-
-			return Load(reader);
-		}
-
-		public static Application Load(string path) {
-			using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-
-			return Load(stream);
+		public static void Run() {
+			Instance.RunInternal();
 		}
 	}
 }

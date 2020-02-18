@@ -1,7 +1,7 @@
 ﻿namespace Window {
-  using System;
-  using System.Runtime.InteropServices;
-  using Quilt.Unmanaged;
+	using System;
+	using System.Runtime.InteropServices;
+	using Quilt.Unmanaged;
 
 	public class Test {
 		[return: MarshalAs(UnmanagedType.LPUTF8Str)]
@@ -12,7 +12,7 @@
 
 		public Test(UnmanagedLibrary library) {
 			_library = library;
-			_getVersionDelegate = Marshal.GetDelegateForFunctionPointer<Func<string>>(_library.GetSymbol("foo"));
+			_getVersionDelegate = Marshal.GetDelegateForFunctionPointer<Func<string>>(_library.LoadSymbol("foo"));
 		}
 
 		public string GetVersion() {

@@ -1,16 +1,19 @@
 ﻿namespace Quilt.GL {
-  using Quilt.GL.Exceptions;
-  using Quilt.GL.Unmanaged;
+	using Quilt.GL.Exceptions;
+	using Quilt.GL.Unmanaged;
+	using Quilt.Unmanaged;
 
-	public abstract class GLObject {
-		protected readonly IGL _gl;
+	public abstract class GLObject : UnmanagedObject {
+		internal readonly int _handle;
 
-		protected GLObject(IGL gl) {
-			_gl = gl;
+		protected GLObject(UnmanagedLibrary library, int handle) : base(library) {
+			_handle = handle;
 		}
 
+		protected abstract Error GetError();
+
 		protected void CheckError() {
-			switch (_gl.GetError()) {
+			switch (GetError()) {
 				case Error.None: {
 					return;
 				}

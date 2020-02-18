@@ -1,78 +1,101 @@
 ﻿namespace Quilt.GL {
 	using System;
-  using System.Threading;
-  using Quilt.GL.Unmanaged;
+	using System.Text;
+	using Quilt.GL.Exceptions;
+	using Quilt.GL.Unmanaged;
+	using Quilt.Unmanaged;
 
-	public abstract class GLShader : IDisposable {
-		private readonly IGL _gl;
-		private readonly Shader _shader;
+	public abstract class GLShader : GLObject, IDisposable {
+		protected GLShader(UnmanagedLibrary library, int handle, string source) : base(library, handle) {
+			SetShaderSource(source);
 
-		protected GLShader(IGL gl, Shader shader) {
-			_gl = gl;
-			_shader = shader;
+			Compile();
 		}
 
-		public bool IsDeleted { 
+		protected abstract void GetShaderiv(int handle, ShaderProperty property, out int value);
+
+		public bool IsDeleted {
 			get {
-				_gl.GetShaderiv(_shader, ShaderProperty.DeleteStatus, out var value);
+				GetShaderiv(_handle, ShaderProperty.DeleteStatus, out var value);
+
+				CheckError();
 
 				return value != 0;
 			}
 		}
 
-		public bool IsCompiled {
+		private bool IsCompiled {
 			get {
-				_gl.GetShaderiv(_shader, ShaderProperty.CompileStatus, out var value);
+				GetShaderiv(_handle, ShaderProperty.CompileStatus, out var value);
+
+				CheckError();
 
 				return value != 0;
 			}
 		}
+
+		protected abstract void ShaderSource(int shader, int count, string[] sources, int[] lengths);
+
+		private void SetShaderSource(params string[] sources) {
+			var lengths = new int[sources.Length];
+
+			for (int i = 0; i < lengths.Length; i++) {
+				lengths[i] = -1;
+			}
+
+			ShaderSource(_handle, sources.Length, sources, lengths);
+		}
+
+		protected abstract void GetShaderSource(int shader, int maxLength, out int length, StringBuilder source);
 
 		public string Source {
 			get {
-				return _gl.GetShaderSource(_shader);
+				var source = new StringBuilder(256);
+				int length;
+
+				do {
+					GetShaderSource(_handle, source.Capacity, out length, source);
+				} while (length > source.Capacity);
+
+				CheckError();
+
+				return source.ToString();
 			}
 		}
+
+		protected abstract void GetShaderInfoLog(int shader, int maxLength, out int length, StringBuilder infoLog);
 
 		public string InfoLog {
 			get {
-				return _gl.GetShaderInfoLog(_shader);
+				var infoLog = new StringBuilder(256);
+				int length;
+
+				do {
+					GetShaderInfoLog(_handle, infoLog.Capacity, out length, infoLog);
+				} while (length > infoLog.Capacity);
+
+				CheckError();
+
+				return infoLog.ToString();
 			}
 		}
 
-		public bool TryCompile(out string infoLog) {
-			_gl.CompileShader(_shader);
+		protected abstract void CompileShader(int shader);
 
-			infoLog = InfoLog;
+		private void Compile() {
+			CompileShader(_handle);
 
-			return IsCompiled;
-		}
+			CheckError();
 
-		#region IDisposable Support
-		private int _disposed = 0; // To detect redundant calls
-
-		protected virtual void Dispose(bool disposing) {
-			if (Interlocked.Increment(ref _disposed) == 1) {
-				if (disposing) {
-					// TODO: dispose managed state (managed objects).
-				}
-
-				_gl.DeleteShader(_shader);
+			if (!IsCompiled) {
+				throw new GLShaderCompileException(this, InfoLog);
 			}
 		}
 
-		~GLShader() {
-			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-			Dispose(false);
-		}
+		protected abstract void DeleteShader(int shader);
 
-		// This code added to correctly implement the disposable pattern.
-		public void Dispose() {
-			// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-			Dispose(true);
-			
-			GC.SuppressFinalize(this);
+		protected override void DisposeUnmanaged() {
+			DeleteShader(_handle);
 		}
-		#endregion
 	}
 }

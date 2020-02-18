@@ -14,7 +14,7 @@
 
 		private static readonly ImplementationGenerator __generator = new ImplementationGenerator();
 		private static readonly Dictionary<string, UnmanagedLibrary> __unmanagedLibraries = new Dictionary<string, UnmanagedLibrary>();
-		private static readonly Dictionary<Type, Type> __unmanagedInterfaces = new Dictionary<Type, Type>();
+		private static readonly Dictionary<Type, Type> __unmanagedObjectTypes = new Dictionary<Type, Type>();
 
 		static UnmanagedLibrary() {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -22,7 +22,7 @@
 				__suffixes = new[] { ".dll" };
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				__prefixes = new[] { "", "lib" };
-				__suffixes = new[] { ".so", ".so.1" };
+				__suffixes = new[] { ".so", ".so.1", ".so.2", ".so.3" };
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 				__prefixes = new[] { "", "lib" };
 				__suffixes = new[] { ".dylib" };
@@ -50,38 +50,30 @@
 			Handle = handle;
 		}
 
-		public IntPtr GetSymbol(string name) {
+		public IntPtr LoadSymbol(string name) {
 			return _loader.LoadSymbol(Handle, name);
 		}
 
-		public bool TryQueryInterface<T>([NotNullWhen(true)] out T? @interface) where T : class {
-			var interfaceType = typeof(T);
+		public T CreateObject<T>(params object[] parameters) where T : UnmanagedObject {
+			var objectType = typeof(T);
 
-			if (!__unmanagedInterfaces.TryGetValue(interfaceType, out var implementationType)) {
-				if (!__generator.TryGenerate<T>(this, out implementationType!)) {
-					@interface = null;
+			if (!__unmanagedObjectTypes.TryGetValue(objectType, out var implementationType)) {
+				implementationType = __generator.Generate<T>(this);
 
-					return false;
-				}
-
-				__unmanagedInterfaces[interfaceType] = implementationType;
+				__unmanagedObjectTypes[objectType] = implementationType;
 			}
 
-			@interface = (T)Activator.CreateInstance(implementationType, this)!;
-
-			return true;
+			return (T)Activator.CreateInstance(implementationType, parameters.Prepend(this).ToArray())!;
 		}
 
 		public static bool TryLoad(string name, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary, params string[] aliases) {
-			return TryLoad(name, out unmanagedLibrary, UnmanagedLoader.Instance, aliases);
+			return TryLoad(name, UnmanagedLoader.Default, out unmanagedLibrary, aliases);
 		}
 
-		public static bool TryLoad(string name, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary, UnmanagedLoader? loader = null, params string[] aliases) {
+		public static bool TryLoad(string name, UnmanagedLoader loader, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary, params string[] aliases) {
 			if (__unmanagedLibraries.TryGetValue(name, out unmanagedLibrary)) {
 				return false;
 			}
-
-			loader = loader ?? UnmanagedLoader.Instance;
 
 			var resolver = new AssemblyDependencyResolver(AppDomain.CurrentDomain.BaseDirectory!);
 
@@ -103,8 +95,6 @@
 		}
 
 		private static bool TryLoadFromPath(UnmanagedLoader loader, string name, string candidate, string path, [NotNullWhen(true)] out UnmanagedLibrary? unmanagedLibrary) {
-			Console.WriteLine($"Attempting to load {name} from {path}.");
-
 			var handle = loader.LoadLibrary(path);
 
 			if (handle == IntPtr.Zero) {
@@ -119,15 +109,15 @@
 		}
 
 		private static IEnumerable<string> GenerateCandidates(string name, string[] aliases) {
-			return aliases.Prepend(name);
+			//return aliases.Prepend(name);
 
-			/*foreach (var prefix in __prefixes) {
+			foreach (var prefix in __prefixes) {
 				foreach (var alias in aliases.Prepend(name)) {
 					foreach (var suffix in __suffixes) {
 						yield return $"{prefix}{alias}{suffix}";
 					}
 				}
-			}*/
+			}
 		}
 	}
 }

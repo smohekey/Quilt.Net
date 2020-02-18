@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quilt.Unmanaged\Quilt.Unmanaged.csproj" />
+    <ProjectReference Include="..\Quilt.GL\Quilt.GL.csproj" />
   </ItemGroup>
 
 </Project>

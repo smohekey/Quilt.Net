@@ -1,11 +1,10 @@
 ﻿namespace Quilt.GL.Unmanaged {
 	using System;
-	using System.Runtime.CompilerServices;
 	using System.Runtime.InteropServices;
 	using System.Text;
 
-	public static class IGLExtensionMethods {
-		public static void ShaderSource(this IGL @this, Shader shader, params string[] sources) {
+	/*public static class IGLExtensionMethods {
+		public static void ShaderSource(this GL @this, Shader shader, params string[] sources) {
 			var lengths = new int[sources.Length];
 
 			for (int i = 0; i < lengths.Length; i++) {
@@ -15,7 +14,7 @@
 			@this.ShaderSource(shader, sources.Length, sources, lengths);
 		}
 
-		public static string GetShaderInfoLog(this IGL @this, Shader shader) {
+		public static string GetShaderInfoLog(this GL @this, Shader shader) {
 			var infoLog = new StringBuilder(256);
 			int length = 0;
 
@@ -26,7 +25,7 @@
 			return infoLog.ToString();
 		}
 
-		public static string GetShaderSource(this IGL @this, Shader shader) {
+		public static string GetShaderSource(this GL @this, Shader shader) {
 			var source = new StringBuilder(256);
 			int length = 0;
 
@@ -37,7 +36,7 @@
 			return source.ToString();
 		}
 
-		public static string GetProgramInfoLog(this IGL @this, Program program) {
+		public static string GetProgramInfoLog(this GL @this, Program program) {
 			var infoLog = new StringBuilder(256);
 			int length = 0;
 
@@ -48,7 +47,7 @@
 			return infoLog.ToString();
 		}
 
-		public unsafe static Buffer[] GenBuffers(this IGL @this, int count) {
+		public unsafe static Buffer[] GenBuffers(this GL @this, int count) {
 			var result = new Buffer[count];
 
 			fixed (Buffer* resultPtr = result) {
@@ -58,25 +57,25 @@
 			return result;
 		}
 
-		public unsafe static Buffer GenBuffer(this IGL @this) {
+		public unsafe static Buffer GenBuffer(this GL @this) {
 			var result = new Buffer[1];
 
-			fixed(Buffer* resultPtr = result) {
+			fixed (Buffer* resultPtr = result) {
 				@this.GenBuffers(1, resultPtr);
 			}
 
 			return result[0];
 		}
 
-		public unsafe static void BufferData<T>(this IGL @this, BufferType target, T[] data, BufferUsage usage) where T : unmanaged {
+		public unsafe static void BufferData<T>(this GL @this, BufferType target, T[] data, BufferUsage usage) where T : unmanaged {
 			var size = new IntPtr(Marshal.SizeOf<T>() * data.Length);
 
-			fixed(void* dataPtr = data) {
+			fixed (void* dataPtr = data) {
 				@this.BufferData(target, size, new IntPtr(dataPtr), usage);
 			}
 		}
 
-		public unsafe static void NamedBufferData<T>(this IGL @this, Buffer buffer, T[] data, BufferUsage usage) where T : unmanaged {
+		public unsafe static void NamedBufferData<T>(this GL @this, Buffer buffer, T[] data, BufferUsage usage) where T : unmanaged {
 			var size = new IntPtr(Marshal.SizeOf<T>() * data.Length);
 
 			fixed (void* dataPtr = data) {
@@ -84,7 +83,7 @@
 			}
 		}
 
-		public unsafe static VertexArray[] GenVertexArrays(this IGL @this, int count) {
+		public unsafe static VertexArray[] GenVertexArrays(this GL @this, int count) {
 			var result = new VertexArray[count];
 
 			fixed (VertexArray* resultPtr = result) {
@@ -94,7 +93,7 @@
 			return result;
 		}
 
-		public unsafe static VertexArray GenVertexArray(this IGL @this) {
+		public unsafe static VertexArray GenVertexArray(this GL @this) {
 			var result = new VertexArray[1];
 
 			fixed (VertexArray* resultPtr = result) {
@@ -103,5 +102,5 @@
 
 			return result[0];
 		}
-	}
+	}*/
 }

@@ -16,17 +16,17 @@
 			public IntPtr dli_saddr;
 		}
 
-		private readonly Func<string, IntPtr> _loadLibrary;
+		private readonly Func<string, int, IntPtr> _loadLibrary;
 		private readonly Func<IntPtr, string, IntPtr> _loadSymbol;
 		private readonly Func<IntPtr, string?> _getLibraryPath;
 
 		internal UnixUnmanagedLoader(bool useLibC) {
-			_loadLibrary = useLibC ? (Func<string, IntPtr>)C.Open : DL.Open;
+			_loadLibrary = useLibC ? (Func<string, int, IntPtr>)C.Open : DL.Open;
 			_loadSymbol = useLibC ? (Func<IntPtr, string, IntPtr>)C.Sym : DL.Sym;
-			_getLibraryPath = useLibC ? (Func<IntPtr, string>)C.GetLibraryPath : DL.GetLibraryPath;
+			_getLibraryPath = useLibC ? (Func<IntPtr, string?>)C.GetLibraryPath : DL.GetLibraryPath;
 		}
 
-		public override IntPtr LoadLibrary(string name) => _loadLibrary(name);
+		public override IntPtr LoadLibrary(string name) => _loadLibrary(name, 2);
 
 		public override IntPtr LoadSymbol(IntPtr library, string name) => _loadSymbol(library, name);
 
@@ -36,7 +36,7 @@
 			private const string NAME = "c";
 
 			[DllImport(NAME, EntryPoint = "dlopen")]
-			public static extern IntPtr Open(string name);
+			public static extern IntPtr Open(string name, int flags);
 
 			[DllImport(NAME, EntryPoint = "dlsym")]
 			public static extern IntPtr Sym(IntPtr library, string name);
@@ -61,7 +61,7 @@
 
 
 			[DllImport(NAME, EntryPoint = "dlopen")]
-			public static extern IntPtr Open(string name);
+			public static extern IntPtr Open(string name, int flags);
 
 			[DllImport(NAME, EntryPoint = "dlsym")]
 			public static extern IntPtr Sym(IntPtr library, string name);
@@ -72,7 +72,7 @@
 			public static string? GetLibraryPath(IntPtr library) {
 				DL_info info = default;
 
-				if(0 == Addr(library, ref info)) {
+				if (0 == Addr(library, ref info)) {
 					return string.Empty;
 				}
 

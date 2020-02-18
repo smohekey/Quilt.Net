@@ -3,13 +3,12 @@
 	using Quilt.Unmanaged;
 
 	public class GLFWUnmanagedLoader : UnmanagedLoader {
-		private readonly IGLFW _glfw;
+		private readonly GLFWContext _context;
 		private readonly UnmanagedLoader _loader;
 
-		public GLFWUnmanagedLoader(IGLFW glfw, UnmanagedLoader loader) {
-			_glfw = glfw;
+		public GLFWUnmanagedLoader(GLFWContext context, UnmanagedLoader loader) {
+			_context = context;
 			_loader = loader;
-
 		}
 
 		public override IntPtr LoadLibrary(string name) {
@@ -17,8 +16,8 @@
 		}
 
 		public override IntPtr LoadSymbol(IntPtr library, string name) {
-			var symbol = _glfw.GetProcAddress(name);
-			
+			var symbol = _context.GetProcAddress(name);
+
 			return symbol != IntPtr.Zero ? symbol : _loader.LoadSymbol(library, name);
 		}
 

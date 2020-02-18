@@ -3,14 +3,21 @@
 	<PropertyGroup>
 		<TargetFramework>netcoreapp3.1</TargetFramework>
 		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
-	
-  <ItemGroup>
-    <PackageReference Include="Sigil" Version="5.0.0" />
-  </ItemGroup>
 
   <ItemGroup>
+		<ProjectReference Include="..\Quilt.GL\Quilt.GL.csproj" />
     <ProjectReference Include="..\Quilt.GLFW\Quilt.GLFW.csproj" />
   </ItemGroup>
+
+	<ItemGroup>
+  <Content Remove="UI/Shaders/solidLines.vert" />
+  <Content Remove="UI/Shaders/solidLines.frag" />
+</ItemGroup>
+<ItemGroup>
+  <EmbeddedResource Include="UI/Shaders/solidLines.vert" />
+  <EmbeddedResource Include="UI/Shaders/solidLines.frag" />
+</ItemGroup>
 
 </Project>

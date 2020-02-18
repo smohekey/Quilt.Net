@@ -1,4 +1,4 @@
-﻿namespace Quilt.GLFW {
+namespace Quilt.GLFW {
 	using System;
 
 	public enum Hint : int {

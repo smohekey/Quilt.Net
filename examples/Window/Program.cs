@@ -1,22 +1,27 @@
 ﻿namespace Window {
 	using System;
 	using Quilt;
-	using Quilt.GL.Unmanaged;
 	using Quilt.GLFW;
-	using Quilt.Unmanaged;
 
 	class Program {
-		static IGL __gl;
 
 		static void Main(string[] args) {
-			var application = Application.Load("Application.xml");
+			var mainWindow = new Quilt.UI.Window() {
+				Title = "Cadre",
+				Position = (100, 100),
+				Size = (400, 400)
+			};
 
-			if (!UnmanagedLibrary.TryLoad("glfw3", out var unmanagedGLFW)) {
+			mainWindow.Show();
+
+			Application.Run();
+
+			/*if (!UnmanagedLibrary.TryLoad("glfw3", out var unmanagedGLFW, "glfw")) {
 				Console.WriteLine("Couldn't open unmanaged library glfw3.");
 				Environment.Exit(-1);
 			}
 
-			if (!unmanagedGLFW.TryQueryInterface<IGLFW>(out var glfw)) {
+			if (!unmanagedGLFW.TryCreateObject<IGLFW>(out var glfw)) {
 				Console.WriteLine("Couldn't get managed interface for glfw.");
 			}
 
@@ -26,6 +31,10 @@
 
 			Console.WriteLine($"GLFW {major}.{minor}.{revision}");
 			Console.WriteLine(glfw.GetVersionString());
+
+			glfw.WindowHint(Hint.ContextVersionMajor, 3);
+			glfw.WindowHint(Hint.ContextVersionMinor, 3);
+			glfw.WindowHint(Hint.OpenglProfile, Profile.Core);
 
 			glfw.SetErrorCallback(Error);
 
@@ -48,7 +57,7 @@
 				Environment.Exit(-1);
 			}
 
-			if (!unmanagedGL.TryQueryInterface<IGL>(out __gl)) {
+			if (!unmanagedGL.TryCreateObject<GL>(out __gl)) {
 				Console.WriteLine("Couldn't get managed interface for gl.");
 				Environment.Exit(-1);
 			}
@@ -159,10 +168,10 @@
 				glfw.WaitEvents();
 			}
 
-			glfw.Terminate();
+			glfw.Terminate();*/
 		}
 
-		private static void FramebufferSize(ref Window window, int width, int height) {
+		/*private static void FramebufferSize(ref Window window, int width, int height) {
 			__gl.Viewport(0, 0, width, height);
 		}
 
@@ -185,12 +194,12 @@
 			Console.WriteLine($"Key: {key}, {scanCode}, {state}, {modifiers}");
 		}
 
-		private static void CursorPos(ref Window window, int x, int y) {
+		private static void CursorPos(ref Window window, double x, double y) {
 			Console.WriteLine($"Cursor Pos: {x}, {y}.");
 		}
 
 		private static void Error(int errorCode, string description) {
 			Console.WriteLine($"Error: {errorCode}, {description}.");
-		}
+		}*/
 	}
 }

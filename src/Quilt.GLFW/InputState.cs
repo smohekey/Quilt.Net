@@ -1,4 +1,4 @@
-﻿namespace Quilt.GLFW {
+namespace Quilt.GLFW {
 	public enum InputState : byte {
 		Release = 0,
 		Press = 1,

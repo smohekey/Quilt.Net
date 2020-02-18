@@ -8,8 +8,8 @@
 		static void Main(string[] args) {
 			var mainWindow = new Quilt.UI.Window() {
 				Title = "Cadre",
-				Position = (100, 100),
-				Size = (400, 400)
+				Position = (200, 200),
+				Size = (512, 512)
 			};
 
 			mainWindow.Show();

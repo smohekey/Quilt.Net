@@ -1,5 +1,5 @@
 ﻿namespace Quilt.GL {
-	public enum DataType : int {
+	public enum DataType : uint {
 		Byte = 0x1400,
 		UnsignedByte = 0x1401,
 		Short = 0x1402,

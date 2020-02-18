@@ -3,10 +3,10 @@
 	using Quilt.GL.Unmanaged;
 	using Quilt.Unmanaged;
 
-	public abstract class GLObject : UnmanagedObject {
-		internal readonly int _handle;
+	public abstract class GLObject<T> : UnmanagedObject where T : unmanaged {
+		internal readonly T _handle;
 
-		protected GLObject(UnmanagedLibrary library, int handle) : base(library) {
+		protected GLObject(UnmanagedLibrary library, T handle) : base(library) {
 			_handle = handle;
 		}
 

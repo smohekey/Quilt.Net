@@ -6,8 +6,9 @@ namespace Quilt.UI {
 	using System;
 	using Quilt.GLFW;
 	using Quilt.GL;
+  using System.Runtime.InteropServices;
 
-	[QuiltElement(Namespace.URI)]
+  [QuiltElement(Namespace.URI)]
 	public class Window : IEquatable<Window> {
 		private static int __nextId = 0;
 
@@ -16,7 +17,12 @@ namespace Quilt.UI {
 		private readonly GLFWWindow _window;
 		private readonly int _id;
 
-		private GLProgram _solidLinesProgram;
+		private readonly GLProgram _passThroughProgram;
+		private readonly GLProgram _solidLinesProgram;
+
+		private readonly GLVertexArray _vertexArray;
+		private readonly GLBuffer _vertexBuffer;
+		private readonly GLBuffer _elementBuffer;
 
 		protected Window(Application application) {
 			Application = application;
@@ -48,7 +54,8 @@ namespace Quilt.UI {
 
 			var gl = _window.GetGLContext();
 
-			CreatePrograms(gl);
+			_passThroughProgram = CreateProgram(gl, "passThrough");
+			_solidLinesProgram = CreateProgram(gl, "solidLines");
 
 			var vertices = new[] {
 				0.5f,  0.5f, 0.0f,  // top right
@@ -63,34 +70,29 @@ namespace Quilt.UI {
 			};
 
 			_vertexArray = gl.CreateVertexArray();
-			using var vaBinding = _vertexArray.Bind();
-
 			(_vertexBuffer, _elementBuffer) = gl.CreateBuffers(2);
 
-			using (var vbBinding = _vertexBuffer.Bind(BufferType.Array))
-			using (var ebBinding = _elementBuffer.Bind(BufferType.ElementArray)) {
-				vbBinding.BufferData(vertices, BufferUsage.StaticDraw);
-				ebBinding.BufferData(indices, BufferUsage.StaticDraw);
+			using var vaBinding = _vertexArray.Bind();
+			using var vbBinding = _vertexBuffer.Bind(BufferType.Array);
+			using var ebBinding = _elementBuffer.Bind(BufferType.ElementArray);
 
-				vaBinding.VertexAttributePointer(0, 3, DataType.Float, false, sizeof(float) * 3, 0);
-				vaBinding.EnableVertexAttribute(0);
-			}
+			vbBinding.BufferData(vertices, BufferUsage.StaticDraw);
+			ebBinding.BufferData(indices, BufferUsage.StaticDraw);
+
+			//vaBinding.VertexAttributePointer(0, 3, DataType.Float, false, Marshal.SizeOf<float>() * 3, 0);
+			vaBinding.VertexAttributePointer(0, 3, DataType.Float, false, 0, 0);
+			vaBinding.EnableVertexAttribute(0);
 		}
 
-		private GLVertexArray _vertexArray;
-		private GLBuffer _vertexBuffer;
-		private GLBuffer _elementBuffer;
-
-		protected void CreatePrograms(GLContext gl) {
+		protected GLProgram CreateProgram(GLContext gl, string name) {
 			var assembly = typeof(Window).Assembly;
-			var solidLinesVertexShaderSource = assembly.GetManifestResourceStream("Quilt.UI.Shaders.solidLines.vert")!;
-			var solidLinesFragmentShaderSource = assembly.GetManifestResourceStream("Quilt.UI.Shaders.solidLines.frag")!;
+			using var solidLinesVertexShaderSource = assembly.GetManifestResourceStream($"Quilt.UI.Shaders.{name}.vert")!;
+			using var solidLinesFragmentShaderSource = assembly.GetManifestResourceStream($"Quilt.UI.Shaders.{name}.frag")!;
 
-			var solidLinesVertexShader = gl.CreateVertexShader(solidLinesVertexShaderSource);
-			var solidLinesFragmentShader = gl.CreateFragmentShader(solidLinesFragmentShaderSource);
+			using var solidLinesVertexShader = gl.CreateVertexShader(solidLinesVertexShaderSource);
+			using var solidLinesFragmentShader = gl.CreateFragmentShader(solidLinesFragmentShaderSource);
 
-			_solidLinesProgram = gl.CreateProgram(solidLinesVertexShader, solidLinesFragmentShader);
-
+			return gl.CreateProgram(solidLinesVertexShader, solidLinesFragmentShader);
 		}
 
 		public Window() : this(Application.Instance) {
@@ -156,15 +158,30 @@ namespace Quilt.UI {
 
 		#region GLFWWindow.OnWindowRefresh Event
 		private void HandleWindowRefresh(GLFWWindow window) {
+			var (width, height) = window.FramebufferSize;
 			var gl = window.GetGLContext();
+
+			gl.Viewport(0, 0, width, height);
 
 			gl.ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 			gl.Clear(BufferBit.Color | BufferBit.Depth | BufferBit.Stencil);
 
-			_solidLinesProgram.Use();
-			_vertexArray.Bind();
+			using var program = _passThroughProgram.Use();
+			using var binding = _vertexArray.Bind();
 
 			gl.DrawElements(DrawMode.Triangles, 6, DataType.UnsignedInt, 0);
+
+			/*gl.Begin(DrawMode.Triangles);
+
+			gl.Color(0.5f, 0, 0);
+
+			gl.Vertex(300.0f, 210.0f);
+			gl.Vertex(340.0f, 215.0f);
+			gl.Vertex(320.0f, 250.0f);
+
+			gl.End();
+
+			gl.Flush();*/
 
 			window.SwapBuffers();
 		}

@@ -1,4 +1,4 @@
-namespace Quilt.GLFW {
+﻿namespace Quilt.GLFW {
 	using System;
 	using System.Runtime.InteropServices;
 	using Quilt.GL;
@@ -31,9 +31,12 @@ namespace Quilt.GLFW {
 
 		protected GLFWWindow(UnmanagedLibrary library, GLFWContext glfw, IntPtr handle, string title) : base(library) {
 			_glfw = glfw;
-			_gl = glfw._glLibrary.CreateObject<GLContext>();
 			_window = handle;
 			_title = title;
+
+			MakeContextCurrent(_window);
+
+			_gl = glfw.GLLibrary.CreateObject<GLContext>();
 
 			SetWindowCloseCallback(_window, _windowCloseDelegate = new WindowCloseCallback(HandleWindowClose));
 			SetWindowIconifyCallback(_window, _windowIconifyDelegate = new WindowIconifyCallback(HandleWindowIconify));
@@ -90,6 +93,16 @@ namespace Quilt.GLFW {
 			}
 			set {
 				SetWindowSize(_window, value.Width, value.Height);
+			}
+		}
+
+		protected abstract void GetFramebufferSize(IntPtr window, out int width, out int height);
+
+		public (int Width, int Height) FramebufferSize {
+			get {
+				GetFramebufferSize(_window, out var width, out var height);
+
+				return (width, height);
 			}
 		}
 

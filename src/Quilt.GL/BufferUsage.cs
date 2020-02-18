@@ -1,5 +1,5 @@
 ﻿namespace Quilt.GL {
-	public enum BufferUsage : int {
+	public enum BufferUsage : uint {
 		StreamDraw = 0x88E0,
 		SrtreamRead = 0x88E1,
 		StreamCopy = 0x88E2,

@@ -1,3 +1,4 @@
+#version 330
 // -----------------------------------------------------------------------------
 // Copyright (C) 2013 Nicolas P. Rougier. All rights reserved.
 // 

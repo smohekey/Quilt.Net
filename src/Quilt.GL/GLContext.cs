@@ -1,5 +1,6 @@
-namespace Quilt.GL {
-	using System.Collections.Generic;
+﻿namespace Quilt.GL {
+  using System;
+  using System.Collections.Generic;
 	using System.IO;
 	using System.Linq;
 	using System.Runtime.InteropServices;
@@ -7,7 +8,7 @@ namespace Quilt.GL {
 	using Quilt.Unmanaged;
 
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "gl")]
-	public abstract class GLContext : GLObject {
+	public abstract class GLContext : GLObject<byte> {
 		protected GLContext(UnmanagedLibrary library) : base(library, 0) {
 
 		}
@@ -16,7 +17,7 @@ namespace Quilt.GL {
 		public abstract void Clear(BufferBit buffer);
 		public abstract void Viewport(int x, int y, int width, int height);
 
-		protected abstract int CreateShader(ShaderType type);
+		protected abstract uint CreateShader(ShaderType type);
 
 		public GLVertexShader CreateVertexShader(string source) {
 			var shader = CreateShader(ShaderType.Vertex);
@@ -50,7 +51,7 @@ namespace Quilt.GL {
 			return CreateFragmentShader(new StreamReader(stream));
 		}
 
-		protected abstract int CreateProgram();
+		protected abstract uint CreateProgram();
 
 		public GLProgram CreateProgram(params GLShader[] shaders) {
 			var program = CreateProgram();
@@ -60,12 +61,12 @@ namespace Quilt.GL {
 			return _library.CreateObject<GLProgram>(program, shaders);
 		}
 
-		protected abstract unsafe void GenBuffers(int count, int* result);
+		protected abstract unsafe void GenBuffers(GLsizei count, uint* result);
 
-		private unsafe int[] GenBuffers(int count) {
-			var result = new int[count];
+		private unsafe uint[] GenBuffers(int count) {
+			var result = new uint[count];
 
-			fixed (int* resultPtr = result) {
+			fixed (uint* resultPtr = result) {
 				GenBuffers(count, resultPtr);
 			}
 
@@ -86,12 +87,12 @@ namespace Quilt.GL {
 			return buffers.Select(buffer => _library.CreateObject<GLBuffer>(buffer));
 		}
 
-		protected abstract unsafe void GenVertexArrays(int count, int* result);
+		protected abstract unsafe void GenVertexArrays(GLsizei count, uint* result);
 
-		private unsafe int[] GenVertexArrays(int count) {
-			var result = new int[count];
+		private unsafe uint[] GenVertexArrays(int count) {
+			var result = new uint[count];
 
-			fixed (int* resultPtr = result) {
+			fixed (uint* resultPtr = result) {
 				GenVertexArrays(count, resultPtr);
 			}
 
@@ -112,8 +113,30 @@ namespace Quilt.GL {
 			return vertexArrys.Select(vertexArray => _library.CreateObject<GLVertexArray>(vertexArray));
 		}
 
-		public abstract void DrawArrays(DrawMode mode, int first, int count);
-		public abstract void DrawElements(DrawMode mode, int count, DataType type, int offset);
+		public abstract void DrawArrays(DrawMode mode, int first, GLsizei count);
+
+		protected abstract void DrawElements(DrawMode mode, GLsizei count, DataType type, GLsizei offset);
+		public void DrawElements(DrawMode mode, int count, DataType type, int offset) {
+			DrawElements(mode, (GLsizei)count, type, (GLsizei)offset);
+
+			CheckError();
+		}
+
+		public abstract void Begin(DrawMode mode);
+		public abstract void End();
+		protected abstract void Color3f(float r, float g, float b);
+
+		public void Color(float r, float g, float b) {
+			Color3f(r, g, b);
+		}
+
+		protected abstract void Vertex2f(float x, float y);
+
+		public void Vertex(float x, float y) {
+			Vertex2f(x, y);
+		}
+
+		public abstract void Flush();
 
 		protected override void DisposeUnmanaged() {
 

@@ -1,5 +1,5 @@
 ﻿namespace Quilt.GL.Unmanaged {
-	public enum ShaderProperty : int {
+	public enum ShaderProperty : uint {
 		ShaderType = 0x8B4F,
 		DeleteStatus = 0x8B80,
 		CompileStatus = 0x8B81,

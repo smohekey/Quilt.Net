@@ -1,5 +1,5 @@
 ﻿namespace Quilt.GL.Unmanaged {
-	public enum ProgramProperty : int {
+	public enum ProgramProperty : uint {
 		DeleteStatus = 0x8B80,
 		LinkStatus = 0x8B82,
 		ValidateStatus = 0x8B83,

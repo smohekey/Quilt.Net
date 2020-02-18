@@ -1,21 +1,22 @@
-namespace Quilt.GL {
+﻿namespace Quilt.GL {
 	using System;
 	using System.Runtime.InteropServices;
-	using Quilt.Unmanaged;
+  using Quilt.GL.Unmanaged;
+  using Quilt.Unmanaged;
 
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "gl")]
-	public abstract class GLVertexArray : GLObject {
-		protected GLVertexArray(UnmanagedLibrary library, int handle) : base(library, handle) {
+	public abstract class GLVertexArray : GLObject<uint> {
+		protected GLVertexArray(UnmanagedLibrary library, uint handle) : base(library, handle) {
 
 		}
 
-		protected abstract void BindVertexArray(int vertexArray);
+		protected abstract void BindVertexArray(uint vertexArray);
 
-		protected abstract void VertexAttribPointer(uint index, int size, DataType type, bool normalized, int stride, int offset);
-		protected abstract void VertexAttribIPointer(uint index, int size, DataType type, int stride, int offset);
-		protected abstract void VertexAttribLPointer(uint index, int size, DataType type, int stride, int offset);
-		protected abstract void EnableVertexAttrib(uint index);
-		protected abstract void DisableVertexAttrib(uint index);
+		protected abstract void VertexAttribPointer(uint index, int size, DataType type, bool normalized, GLsizei stride, GLsizei offset);
+		protected abstract void VertexAttribIPointer(uint index, int size, DataType type, GLsizei stride, GLsizei offset);
+		protected abstract void VertexAttribLPointer(uint index, int size, DataType type, GLsizei stride, GLsizei offset);
+		protected abstract void EnableVertexAttribArray(uint index);
+		protected abstract void DisableVertexAttribArray(uint index);
 
 		public Binding Bind() {
 			BindVertexArray(_handle);
@@ -25,9 +26,15 @@ namespace Quilt.GL {
 			return new Binding(this);
 		}
 
-		protected abstract void DestroyVertexArray(int vertexArray);
+		protected abstract unsafe void DeleteVertexArrays(GLsizei count, void* vertexArrays);
+
+		private unsafe void DeleteVertexArrays(params uint[] vertexArrays) {
+			fixed(void* ptr = vertexArrays) {
+				DeleteVertexArrays(vertexArrays.Length, ptr);
+			}
+		}
 		protected override void DisposeUnmanaged() {
-			DestroyVertexArray(_handle);
+			DeleteVertexArrays(_handle);
 		}
 
 		public ref struct Binding {
@@ -39,7 +46,6 @@ namespace Quilt.GL {
 
 			public void VertexAttributePointer(uint index, int size, DataType type, bool normalized, int stride, int offset) {
 				_vertexArray.VertexAttribPointer(index, size, type, normalized, stride, offset);
-				_vertexArray.CheckError();
 			}
 
 			public void VertexAttributeIPointer(uint index, int size, DataType type, int stride, int offset) {
@@ -53,11 +59,11 @@ namespace Quilt.GL {
 			}
 
 			public void EnableVertexAttribute(uint index) {
-				_vertexArray.EnableVertexAttrib(index);
+				_vertexArray.EnableVertexAttribArray(index);
 			}
 
 			public void DisableVertexAttribute(uint index) {
-				_vertexArray.DisableVertexAttrib(index);
+				_vertexArray.DisableVertexAttribArray(index);
 			}
 
 			// no need to implement IDisposable for this to work, as of C#8

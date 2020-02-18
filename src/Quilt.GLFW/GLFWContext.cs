@@ -1,4 +1,4 @@
-namespace Quilt.GLFW {
+﻿namespace Quilt.GLFW {
 	using System;
 	using System.Linq;
 	using System.Collections.Generic;
@@ -31,7 +31,9 @@ namespace Quilt.GLFW {
 		protected delegate void ErrorCallback(int error, string description);
 		protected delegate void MonitorCallback(IntPtr monitor, int @event);
 
-		internal readonly UnmanagedLibrary _glLibrary;
+		private readonly Lazy<UnmanagedLibrary> _lazyGLLibrary;
+
+		internal UnmanagedLibrary GLLibrary => _lazyGLLibrary.Value;
 
 		private readonly ErrorCallback _errorDelegate;
 		private readonly MonitorCallback _monitorDelegate;
@@ -41,18 +43,23 @@ namespace Quilt.GLFW {
 
 			WindowHint(Hint.ContextVersionMajor, 3);
 			WindowHint(Hint.ContextVersionMinor, 3);
-			WindowHint(Hint.OpenglProfile, (int)Profile.Core);
+			//WindowHint(Hint.OpenglProfile, (int)Profile.Core);
+			//WindowHint(Hint.OpenglForwardCompatible, true);
 
+			SetErrorCallback(_errorDelegate = new ErrorCallback(HandleError));
+			SetMonitorCallback(_monitorDelegate = new MonitorCallback(HandleMonitor));
+
+			 _lazyGLLibrary = new Lazy<UnmanagedLibrary>(LoadGLLibrary);
+		}
+
+		private UnmanagedLibrary LoadGLLibrary() {
 			var loader = new GLFWUnmanagedLoader(this, UnmanagedLoader.Default);
 
 			if (!UnmanagedLibrary.TryLoad("GL", loader, out var glLibrary, "opengl32")) {
 				throw new Exception("Couldn't load GL");
 			}
 
-			_glLibrary = glLibrary;
-
-			SetErrorCallback(_errorDelegate = new ErrorCallback(HandleError));
-			SetMonitorCallback(_monitorDelegate = new MonitorCallback(HandleMonitor));
+			return glLibrary;
 		}
 
 		private void HandleError(int error, string description) {

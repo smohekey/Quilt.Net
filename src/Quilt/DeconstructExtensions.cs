@@ -1,9 +1,7 @@
-using System.Runtime.CompilerServices;
-namespace Quilt {
+﻿namespace Quilt {
 	using System.Collections.Generic;
-	using System.Linq;
 
-	public static class DestructureExtensions {
+	public static class DeconstructExtensions {
 		public static void Deconstruct<T>(this IEnumerable<T> @this, out T v0) {
 			v0 = default!;
 

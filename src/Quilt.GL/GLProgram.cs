@@ -1,13 +1,14 @@
 ﻿namespace Quilt.GL {
-	using System.Runtime.InteropServices;
+  using System;
+  using System.Runtime.InteropServices;
 	using System.Text;
 	using Quilt.GL.Exceptions;
 	using Quilt.GL.Unmanaged;
 	using Quilt.Unmanaged;
 
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "gl")]
-	public abstract class GLProgram : GLObject {
-		protected GLProgram(UnmanagedLibrary library, int handle, GLShader[] shaders) : base(library, handle) {
+	public abstract class GLProgram : GLObject<uint> {
+		protected GLProgram(UnmanagedLibrary library, uint handle, GLShader[] shaders) : base(library, handle) {
 			foreach (var shader in shaders) {
 				AttachShader(shader);
 			}
@@ -15,7 +16,7 @@
 			Link();
 		}
 
-		protected abstract void GetProgramiv(int prgram, ProgramProperty property, out int value);
+		protected abstract void GetProgramiv(uint prgram, ProgramProperty property, out int value);
 
 		private bool IsLinked {
 			get {
@@ -27,12 +28,12 @@
 			}
 		}
 
-		protected abstract void GetProgramInfoLog(int program, int maxLength, out int length, StringBuilder infoLog);
+		protected abstract void GetProgramInfoLog(uint program, GLsizei maxLength, out GLsizei length, StringBuilder infoLog);
 
 		public string InfoLog {
 			get {
 				var infoLog = new StringBuilder(256);
-				int length;
+				GLsizei length;
 
 				do {
 					GetProgramInfoLog(_handle, infoLog.Capacity, out length, infoLog);
@@ -44,7 +45,7 @@
 			}
 		}
 
-		protected abstract void AttachShader(int program, int shader);
+		protected abstract void AttachShader(uint program, uint shader);
 
 		private void AttachShader(GLShader shader) {
 			AttachShader(_handle, shader._handle);
@@ -52,7 +53,7 @@
 			CheckError();
 		}
 
-		protected abstract void DetachShader(int program, int shader);
+		protected abstract void DetachShader(uint program, uint shader);
 
 		private void DetachShader(GLShader shader) {
 			DetachShader(_handle, shader._handle);
@@ -60,7 +61,7 @@
 			CheckError();
 		}
 
-		protected abstract void LinkProgram(int program);
+		protected abstract void LinkProgram(uint program);
 
 		private void Link() {
 			LinkProgram(_handle);
@@ -72,12 +73,14 @@
 			}
 		}
 
-		protected abstract void UseProgram(int program);
+		protected abstract void UseProgram(uint program);
 
-		public void Use() {
+		public Binding Use() {
 			UseProgram(_handle);
 
 			CheckError();
+
+			return new Binding(this);
 		}
 
 		public abstract void Uniform1f(int location, float v0);
@@ -110,10 +113,22 @@
 		public abstract void Uniform3uiv(int location, out uint v0, out uint v1, out uint v2);
 		public abstract void Uniform4uiv(int location, out uint v0, out uint v1, out uint v2, out uint v3);
 
-		protected abstract void DeleteProgram(int program);
+		protected abstract void DeleteProgram(uint program);
 
 		protected override void DisposeUnmanaged() {
 			DeleteProgram(_handle);
+		}
+
+		public ref struct Binding {
+			private readonly GLProgram _program;
+
+			internal Binding(GLProgram program) {
+				_program = program;
+			}
+
+			public void Dispose() {
+				_program.UseProgram(0);
+			}
 		}
 	}
 }

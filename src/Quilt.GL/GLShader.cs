@@ -5,14 +5,14 @@
 	using Quilt.GL.Unmanaged;
 	using Quilt.Unmanaged;
 
-	public abstract class GLShader : GLObject, IDisposable {
-		protected GLShader(UnmanagedLibrary library, int handle, string source) : base(library, handle) {
+	public abstract class GLShader : GLObject<uint> {
+		protected GLShader(UnmanagedLibrary library, uint handle, string source) : base(library, handle) {
 			SetShaderSource(source);
 
 			Compile();
 		}
 
-		protected abstract void GetShaderiv(int handle, ShaderProperty property, out int value);
+		protected abstract void GetShaderiv(uint handle, ShaderProperty property, out int value);
 
 		public bool IsDeleted {
 			get {
@@ -34,7 +34,7 @@
 			}
 		}
 
-		protected abstract void ShaderSource(int shader, int count, string[] sources, int[] lengths);
+		protected abstract void ShaderSource(uint shader, GLsizei count, string[] sources, int[] lengths);
 
 		private void SetShaderSource(params string[] sources) {
 			var lengths = new int[sources.Length];
@@ -46,12 +46,12 @@
 			ShaderSource(_handle, sources.Length, sources, lengths);
 		}
 
-		protected abstract void GetShaderSource(int shader, int maxLength, out int length, StringBuilder source);
+		protected abstract void GetShaderSource(uint shader, GLsizei maxLength, out GLsizei length, StringBuilder source);
 
 		public string Source {
 			get {
 				var source = new StringBuilder(256);
-				int length;
+				GLsizei length;
 
 				do {
 					GetShaderSource(_handle, source.Capacity, out length, source);
@@ -63,12 +63,12 @@
 			}
 		}
 
-		protected abstract void GetShaderInfoLog(int shader, int maxLength, out int length, StringBuilder infoLog);
+		protected abstract void GetShaderInfoLog(uint shader, GLsizei maxLength, out GLsizei length, StringBuilder infoLog);
 
 		public string InfoLog {
 			get {
 				var infoLog = new StringBuilder(256);
-				int length;
+				GLsizei length;
 
 				do {
 					GetShaderInfoLog(_handle, infoLog.Capacity, out length, infoLog);
@@ -80,7 +80,7 @@
 			}
 		}
 
-		protected abstract void CompileShader(int shader);
+		protected abstract void CompileShader(uint shader);
 
 		private void Compile() {
 			CompileShader(_handle);
@@ -92,7 +92,7 @@
 			}
 		}
 
-		protected abstract void DeleteShader(int shader);
+		protected abstract void DeleteShader(uint shader);
 
 		protected override void DisposeUnmanaged() {
 			DeleteShader(_handle);

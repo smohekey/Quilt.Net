@@ -1,5 +1,5 @@
 ﻿namespace Quilt.GL {
-	public enum BufferType : uint {
+	public enum BufferTarget : uint {
 		Array = 0x8892,
 		AtomicCounter = 0x92C0,
 		CopyRead = 0x8F36,

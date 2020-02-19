@@ -1,17 +1,21 @@
 ﻿namespace Quilt.GL {
+	using System.Runtime.CompilerServices;
 	using Quilt.GL.Exceptions;
 	using Quilt.GL.Unmanaged;
 	using Quilt.Unmanaged;
 
-	public abstract class GLObject<T> : UnmanagedObject where T : unmanaged {
-		internal readonly T _handle;
+	public abstract class GLObject : UnmanagedObject {
+		internal readonly GLContext _context;
+		internal readonly uint _handle;
 
-		protected GLObject(UnmanagedLibrary library, T handle) : base(library) {
+		protected GLObject(UnmanagedLibrary library, GLContext context, uint handle) : base(library) {
+			_context = context;
 			_handle = handle;
 		}
 
 		protected abstract Error GetError();
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		protected void CheckError() {
 			switch (GetError()) {
 				case Error.None: {

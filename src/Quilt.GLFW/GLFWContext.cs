@@ -41,15 +41,16 @@
 		protected GLFWContext(UnmanagedLibrary library) : base(library) {
 			Init();
 
-			WindowHint(Hint.ContextVersionMajor, 3);
+			WindowHint(Hint.ContextVersionMajor, 4);
 			WindowHint(Hint.ContextVersionMinor, 3);
-			//WindowHint(Hint.OpenglProfile, (int)Profile.Core);
+			WindowHint(Hint.OpenglProfile, (int)Profile.Core);
+			WindowHint(Hint.OpenglDebugContext, true);
 			//WindowHint(Hint.OpenglForwardCompatible, true);
 
 			SetErrorCallback(_errorDelegate = new ErrorCallback(HandleError));
 			SetMonitorCallback(_monitorDelegate = new MonitorCallback(HandleMonitor));
 
-			 _lazyGLLibrary = new Lazy<UnmanagedLibrary>(LoadGLLibrary);
+			_lazyGLLibrary = new Lazy<UnmanagedLibrary>(LoadGLLibrary);
 		}
 
 		private UnmanagedLibrary LoadGLLibrary() {
@@ -85,6 +86,8 @@
 		public void WindowHint(Hint hint, bool value) {
 			WindowHint(hint, value ? 1 : 0);
 		}
+
+		public abstract void DefaultWindowHints();
 
 		public abstract void WindowHint(Hint hint, string value);
 

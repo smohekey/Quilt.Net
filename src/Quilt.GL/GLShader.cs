@@ -5,8 +5,8 @@
 	using Quilt.GL.Unmanaged;
 	using Quilt.Unmanaged;
 
-	public abstract class GLShader : GLObject<uint> {
-		protected GLShader(UnmanagedLibrary library, uint handle, string source) : base(library, handle) {
+	public abstract class GLShader : GLObject {
+		protected GLShader(UnmanagedLibrary library, GLContext context, uint handle, string source) : base(library, context, handle) {
 			SetShaderSource(source);
 
 			Compile();

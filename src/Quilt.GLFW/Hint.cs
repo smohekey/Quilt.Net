@@ -1,7 +1,7 @@
 namespace Quilt.GLFW {
 	using System;
 
-	public enum Hint : int {
+	public enum Hint : uint {
 		Focused = 0x00020001,
 		Resizable = 0x00020003,
 		Visible = 0x00020004,

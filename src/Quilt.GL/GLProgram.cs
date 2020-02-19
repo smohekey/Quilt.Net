@@ -1,16 +1,18 @@
 ﻿namespace Quilt.GL {
-  using System;
-  using System.Runtime.InteropServices;
+	using System;
+	using System.Runtime.InteropServices;
 	using System.Text;
 	using Quilt.GL.Exceptions;
 	using Quilt.GL.Unmanaged;
 	using Quilt.Unmanaged;
 
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "gl")]
-	public abstract class GLProgram : GLObject<uint> {
-		protected GLProgram(UnmanagedLibrary library, uint handle, GLShader[] shaders) : base(library, handle) {
+	public abstract class GLProgram : GLObject {
+		protected GLProgram(UnmanagedLibrary library, GLContext context, uint handle, GLShader?[] shaders) : base(library, context, handle) {
 			foreach (var shader in shaders) {
-				AttachShader(shader);
+				if (shader != null) {
+					AttachShader(shader);
+				}
 			}
 
 			Link();
@@ -73,62 +75,10 @@
 			}
 		}
 
-		protected abstract void UseProgram(uint program);
-
-		public Binding Use() {
-			UseProgram(_handle);
-
-			CheckError();
-
-			return new Binding(this);
-		}
-
-		public abstract void Uniform1f(int location, float v0);
-		public abstract void Uniform2f(int location, float v0, float v1);
-		public abstract void Uniform3f(int location, float v0, float v1, float v2);
-		public abstract void Uniform4f(int location, float v0, float v1, float v2, float v3);
-
-		public abstract void Uniform1i(int location, int v0);
-		public abstract void Uniform2i(int location, int v0, int v1);
-		public abstract void Uniform3i(int location, int v0, int v1, int v2);
-		public abstract void Uniform4i(int location, int v0, int v1, int v2, int v3);
-
-		public abstract void Uniform1ui(int location, uint v0);
-		public abstract void Uniform2ui(int location, uint v0, uint v1);
-		public abstract void Uniform3ui(int location, uint v0, uint v1, uint v2);
-		public abstract void Uniform4ui(int location, uint v0, uint v1, uint v2, uint v3);
-
-		public abstract void Uniform1fv(int location, out float v0);
-		public abstract void Uniform2fv(int location, out float v0, out float v1);
-		public abstract void Uniform3fv(int location, out float v0, out float v1, out float v2);
-		public abstract void Uniform4fv(int location, out float v0, out float v1, out float v2, out float v3);
-
-		public abstract void Uniform1iv(int location, out int v0);
-		public abstract void Uniform2iv(int location, out int v0, out int v1);
-		public abstract void Uniform3iv(int location, out int v0, out int v1, out int v2);
-		public abstract void Uniform4iv(int location, out int v0, out int v1, out int v2, out int v3);
-
-		public abstract void Uniform1uiv(int location, out uint v0);
-		public abstract void Uniform2uiv(int location, out uint v0, out uint v1);
-		public abstract void Uniform3uiv(int location, out uint v0, out uint v1, out uint v2);
-		public abstract void Uniform4uiv(int location, out uint v0, out uint v1, out uint v2, out uint v3);
-
 		protected abstract void DeleteProgram(uint program);
 
 		protected override void DisposeUnmanaged() {
 			DeleteProgram(_handle);
-		}
-
-		public ref struct Binding {
-			private readonly GLProgram _program;
-
-			internal Binding(GLProgram program) {
-				_program = program;
-			}
-
-			public void Dispose() {
-				_program.UseProgram(0);
-			}
 		}
 	}
 }

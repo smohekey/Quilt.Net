@@ -4,7 +4,7 @@
 
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "gl")]
 	public abstract class GLFragmentShader : GLShader {
-		protected GLFragmentShader(UnmanagedLibrary library, uint handle, string source) : base(library, handle, source) {
+		protected GLFragmentShader(UnmanagedLibrary library, GLContext context, uint handle, string source) : base(library, context, handle, source) {
 
 		}
 	}

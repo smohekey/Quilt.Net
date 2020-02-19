@@ -6,9 +6,11 @@ namespace Quilt.UI {
 	using System;
 	using Quilt.GLFW;
 	using Quilt.GL;
-  using System.Runtime.InteropServices;
+	using System.Runtime.InteropServices;
+	using System.Numerics;
+	using Quilt.VG;
 
-  [QuiltElement(Namespace.URI)]
+	[QuiltElement(Namespace.URI)]
 	public class Window : IEquatable<Window> {
 		private static int __nextId = 0;
 
@@ -17,12 +19,13 @@ namespace Quilt.UI {
 		private readonly GLFWWindow _window;
 		private readonly int _id;
 
-		private readonly GLProgram _passThroughProgram;
-		private readonly GLProgram _solidLinesProgram;
+		private readonly GLProgram _linesProgram;
 
 		private readonly GLVertexArray _vertexArray;
 		private readonly GLBuffer _vertexBuffer;
 		private readonly GLBuffer _elementBuffer;
+
+		private readonly VGContext _vg;
 
 		protected Window(Application application) {
 			Application = application;
@@ -30,6 +33,7 @@ namespace Quilt.UI {
 			var glfw = Application._glfw;
 
 			glfw.WindowHint(Hint.Visible, false);
+			glfw.WindowHint(Hint.Resizable, true);
 
 			_window = glfw.CreateWindow(100, 100, "Quilt");
 			_id = Interlocked.Increment(ref __nextId);
@@ -54,45 +58,76 @@ namespace Quilt.UI {
 
 			var gl = _window.GetGLContext();
 
-			_passThroughProgram = CreateProgram(gl, "passThrough");
-			_solidLinesProgram = CreateProgram(gl, "solidLines");
+			_vg = new VGContext(gl);
+
+			_linesProgram = CreateProgram(gl, "lines");
 
 			var vertices = new[] {
-				0.5f,  0.5f, 0.0f,  // top right
-				0.5f, -0.5f, 0.0f,  // bottom right
-				-0.5f, -0.5f, 0.0f,  // bottom left
-				-0.5f,  0.5f, 0.0f   // top left 
+				50f,  50f, 0.0f,  // top left
+				100f, 50f, 0.0f,  // top right
+				100f, 100f, 0.0f,  // bottom right
+				50f,  100f, 0.0f   // bottom left 
 			};
 
 			var indices = new uint[] {  // note that we start from 0!
-				0, 1, 3,   // first triangle
-				1, 2, 3    // second triangle
+				0, 1,
+				1, 2,
+				2, 3,
+				3, 0
 			};
 
 			_vertexArray = gl.CreateVertexArray();
-			(_vertexBuffer, _elementBuffer) = gl.CreateBuffers(2);
+			_vertexBuffer = gl.CreateBuffer();
+			_elementBuffer = gl.CreateBuffer();
 
-			using var vaBinding = _vertexArray.Bind();
-			using var vbBinding = _vertexBuffer.Bind(BufferType.Array);
-			using var ebBinding = _elementBuffer.Bind(BufferType.ElementArray);
+			gl.BindVertexArray(_vertexArray);
+			gl.BindBuffer(BufferTarget.Array, _vertexBuffer);
+			gl.BindBuffer(BufferTarget.ElementArray, _elementBuffer);
 
-			vbBinding.BufferData(vertices, BufferUsage.StaticDraw);
-			ebBinding.BufferData(indices, BufferUsage.StaticDraw);
+			gl.BufferData(BufferTarget.Array, vertices, BufferUsage.StaticDraw);
+			gl.BufferData(BufferTarget.ElementArray, indices, BufferUsage.StaticDraw);
 
-			//vaBinding.VertexAttributePointer(0, 3, DataType.Float, false, Marshal.SizeOf<float>() * 3, 0);
-			vaBinding.VertexAttributePointer(0, 3, DataType.Float, false, 0, 0);
-			vaBinding.EnableVertexAttribute(0);
+			gl.VertexAttribPointer(0, 3, DataType.Float, false, Marshal.SizeOf<float>() * 3, 0);
+			gl.EnableVertexAttribArray(0);
 		}
 
 		protected GLProgram CreateProgram(GLContext gl, string name) {
 			var assembly = typeof(Window).Assembly;
-			using var solidLinesVertexShaderSource = assembly.GetManifestResourceStream($"Quilt.UI.Shaders.{name}.vert")!;
-			using var solidLinesFragmentShaderSource = assembly.GetManifestResourceStream($"Quilt.UI.Shaders.{name}.frag")!;
+			using var vertexShaderSource = assembly.GetManifestResourceStream($"Quilt.UI.Shaders.{name}.vert")!;
+			using var geometryShaderSource = assembly.GetManifestResourceStream($"Quilt.UI.Shaders.{name}.geom")!;
+			using var fragmentShaderSource = assembly.GetManifestResourceStream($"Quilt.UI.Shaders.{name}.frag")!;
 
-			using var solidLinesVertexShader = gl.CreateVertexShader(solidLinesVertexShaderSource);
-			using var solidLinesFragmentShader = gl.CreateFragmentShader(solidLinesFragmentShaderSource);
+			var vertexShader = default(GLVertexShader);
+			var geometryShader = default(GLGeometryShader);
+			var fragmentShader = default(GLFragmentShader);
 
-			return gl.CreateProgram(solidLinesVertexShader, solidLinesFragmentShader);
+			if (vertexShaderSource != null) {
+				vertexShader = gl.CreateVertexShader(vertexShaderSource);
+			}
+
+			if (geometryShaderSource != null) {
+				geometryShader = gl.CreateGeometryShader(geometryShaderSource);
+			}
+
+			if (fragmentShader != null) {
+				fragmentShader = gl.CreateFragmentShader(fragmentShaderSource);
+			}
+
+			var program = gl.CreateProgram(vertexShader, geometryShader, fragmentShader);
+
+			if (vertexShader != null) {
+				vertexShader.Dispose();
+			}
+
+			if (geometryShader != null) {
+				geometryShader.Dispose();
+			}
+
+			if (fragmentShader != null) {
+				fragmentShader.Dispose();
+			}
+
+			return program;
 		}
 
 		public Window() : this(Application.Instance) {
@@ -161,27 +196,29 @@ namespace Quilt.UI {
 			var (width, height) = window.FramebufferSize;
 			var gl = window.GetGLContext();
 
-			gl.Viewport(0, 0, width, height);
+			//gl.Viewport(0, 0, width, height);
 
 			gl.ClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 			gl.Clear(BufferBit.Color | BufferBit.Depth | BufferBit.Stencil);
 
-			using var program = _passThroughProgram.Use();
-			using var binding = _vertexArray.Bind();
+			//gl.UseProgram(_linesProgram);
+			//gl.BindVertexArray(_vertexArray);
 
-			gl.DrawElements(DrawMode.Triangles, 6, DataType.UnsignedInt, 0);
+			//gl.PolygonMode(FaceSelection.FrontAndBack, PolygonMode.Line);
 
-			/*gl.Begin(DrawMode.Triangles);
+			//gl.DrawElements(DrawMode.Lines, 8, DataType.UnsignedInt, 0);
 
-			gl.Color(0.5f, 0, 0);
+			_vg.BeginFrame(width, height);
+			/*	_vg.BeginPath(new Vector2(10, 10));
+				_vg.LineTo(new Vector2(100, 10));
+				_vg.LineTo(new Vector2(100, 100));
+				_vg.LineTo(new Vector2(10, 100));
+				_vg.LineTo(new Vector2(10, 10));
+				_vg.Stroke();*/
 
-			gl.Vertex(300.0f, 210.0f);
-			gl.Vertex(340.0f, 215.0f);
-			gl.Vertex(320.0f, 250.0f);
-
-			gl.End();
-
-			gl.Flush();*/
+			_vg.BeginPath(new Vector2(100, 10));
+			_vg.ArcTo(new Vector2(100, 100), new Vector2(100, 55));
+			_vg.Stroke();
 
 			window.SwapBuffers();
 		}
@@ -260,6 +297,13 @@ namespace Quilt.UI {
 			var gl = window.GetGLContext();
 
 			gl.Viewport(0, 0, width, height);
+
+			int projectionUniform = gl.GetUniformLocation(_linesProgram, "u_projection");
+
+			var projection = Matrix4x4.CreateOrthographicOffCenter(0, width, height, 0, -1, 1);
+
+			gl.UseProgram(_linesProgram);
+			gl.UniformMatrix(projectionUniform, 1, false, projection);
 		}
 		#endregion
 

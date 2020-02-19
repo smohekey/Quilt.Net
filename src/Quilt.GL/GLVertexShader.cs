@@ -4,7 +4,7 @@
 
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "gl")]
 	public abstract class GLVertexShader : GLShader {
-		protected GLVertexShader(UnmanagedLibrary library, uint handle, string source) : base(library, handle, source) {
+		protected GLVertexShader(UnmanagedLibrary library, GLContext context, uint handle, string source) : base(library, context, handle, source) {
 
 		}
 	}

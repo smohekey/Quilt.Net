@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\Quilt.GLFW\Quilt.GLFW.csproj" />
     <ProjectReference Include="..\Quilt.GL\Quilt.GL.csproj" />
+    <ProjectReference Include="..\Quilt.Unmanaged\Quilt.Unmanaged.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -12,12 +14,12 @@
 
 
   <ItemGroup>
-    <None Remove="Shaders/Path.vert"/>
-    <None Remove="Shaders/Path.frag"/>
+    <None Remove="Shaders/Path.vert" />
+    <None Remove="Shaders/Path.frag" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Shaders/Path.vert"/>
-    <EmbeddedResource Include="Shaders/Path.frag"/>
+    <EmbeddedResource Include="Shaders/Path.vert" />
+    <EmbeddedResource Include="Shaders/Path.frag" />
   </ItemGroup>
 </Project>

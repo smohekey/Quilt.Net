@@ -27,11 +27,14 @@ namespace Quilt.VG {
 			_arcVA = _gl.CreateVertexArray();
 			_arcVB = _gl.CreateBuffer();
 
+			// rent a buffer temporarily for the initial call to BufferData
 			var pointList = _pointListPool.Rent(BUFFER_SIZE);
 
 			gl.BindVertexArray(_arcVA);
 			gl.BindBuffer(BufferTarget.Array, _arcVB);
 			gl.BufferData(BufferTarget.Array, pointList, BufferUsage.StreamDraw);
+
+			_pointListPool.Return(pointList);
 
 			gl.VertexAttribPointer(0, 2, DataType.Float, false, Marshal.SizeOf<float>() * 2, 0);
 			gl.EnableVertexAttribArray(0);
@@ -75,31 +78,61 @@ namespace Quilt.VG {
 			bool clockwise = true;
 
 			var start = LastPathPoint;
-			var totalA = MathF.Atan2(end.Y - center.Y, end.X - center.X) - MathF.Atan2(start.Y - center.Y, start.X - center.X);
 
-			var arcVertexCount = Math.Max(1, Math.Min((int)(MathF.Abs(totalA) / (MathF.PI * 0.5f) + 0.5f), 5));
+			Console.WriteLine($"start: {start}, center: {center}, end: {end}");
 
-			var a = totalA / arcVertexCount;
+			var totalAngle = 2 * MathF.PI * MathF.Atan2(end.Y - center.Y, end.X - center.X) - MathF.Atan2(start.Y - center.Y, start.X - center.X);
+
+			Console.WriteLine($"totalAngle: {totalAngle}");
+
+			var arcPointCount = Math.Max(1, Math.Min((int)(MathF.Abs(totalAngle) / (MathF.PI * 0.5f) + 0.5f), 5));
+
+			Console.WriteLine($"arcPointCount: {arcPointCount}");
+
+			var a = totalAngle / arcPointCount;
 			var r = MathF.Sqrt(MathF.Pow(start.X - center.X, 2) + MathF.Pow(start.Y - center.Y, 2));
+
+			Console.WriteLine($"r: {r}");
 
 			var angle = MathF.Atan2(start.Y - center.Y, start.X - center.X);
 
 			AddPathPoint(start);
 
-			for (int i = 0; i < arcVertexCount; i++) {
+			for (int i = 0; i < arcPointCount; i++) {
 				if (clockwise) {
 					angle -= a / r;
 				} else {
 					angle += a / r;
 				}
 
-				var Bx = center.X + r * MathF.Cos(angle);
-				var By = center.Y + r * MathF.Sin(angle);
+				var x = center.X + r * MathF.Cos(angle);
+				var y = center.Y + r * MathF.Sin(angle);
 
-				AddPathPoint(new Vector2(Bx, By));
+				Console.WriteLine($"point: {x}, {y}");
+
+				AddPathPoint(new Vector2(x, y));
 			}
 
 			AddPathPoint(end);
+		}
+
+		public void BezierTo(Vector2 p1, Vector2 p2, Vector2 p3) {
+			const int COUNT = 100;
+
+			var start = LastPathPoint;
+
+			float dt = 1.0f / COUNT;
+			float t = 0.0f;
+			for (int i = 0; i <= COUNT; i++) {
+				var x = MathF.Pow((1 - t), 3) * start.X + 3 * t * MathF.Pow((1 - t), 2) * p1.X + 3 * (1 - t) * MathF.Pow(t, 2) * p2.X + MathF.Pow(t, 3) * p3.X;
+				var y = MathF.Pow((1 - t), 3) * start.Y + 3 * t * MathF.Pow((1 - t), 2) * p1.Y + 3 * (1 - t) * MathF.Pow(t, 2) * p2.Y + MathF.Pow(t, 3) * p3.Y;
+
+				AddPathPoint(x, y);
+
+				t += dt;
+			}
+
+
 		}
 
 		public void Stroke() {
@@ -120,6 +153,10 @@ namespace Quilt.VG {
 			get {
 				return _currentSegment.PointList[_currentSegment.PointCount - 1];
 			}
+		}
+
+		private void AddPathPoint(float x, float y) {
+			AddPathPoint(new Vector2(x, y));
 		}
 
 		private void AddPathPoint(Vector2 vertex) {

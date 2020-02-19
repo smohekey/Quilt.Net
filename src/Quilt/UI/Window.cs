@@ -220,6 +220,10 @@ namespace Quilt.UI {
 			_vg.ArcTo(new Vector2(100, 100), new Vector2(100, 55));
 			_vg.Stroke();
 
+			/*_vg.BeginPath(new Vector2(100, 100));
+			_vg.BezierTo(new Vector2(100, 200), new Vector2(200, 200), new Vector2(200, 100));
+			_vg.Stroke();*/
+
 			window.SwapBuffers();
 		}
 		#endregion

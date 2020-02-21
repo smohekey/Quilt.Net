@@ -16,6 +16,9 @@
 
 		private Application() {
 			_glfw = GLFWContext.Create();
+			_glfw.SwapInterval(1);
+			_glfw.WindowHint(Hint.Samples, 4);
+
 			_windows = new HashSet<Window>();
 		}
 

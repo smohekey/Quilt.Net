@@ -413,12 +413,20 @@ namespace Quilt.GL {
 
 		protected abstract unsafe void BufferData(BufferTarget target, GLsizei size, void* data, BufferUsage usage);
 
-		public unsafe void BufferData<T>(BufferTarget target, T[] data, BufferUsage usage) where T : unmanaged {
+		public unsafe void BufferData<T>(BufferTarget target, T[] data, int length, BufferUsage usage) where T : unmanaged {
 			fixed (void* ptr = data) {
-				BufferData(target, data.Length * Marshal.SizeOf<T>(), ptr, usage);
+				BufferData(target, length * Marshal.SizeOf<T>(), ptr, usage);
 			}
 
 			CheckError();
+		}
+
+		public void BufferData<T>(BufferTarget target, T[] data, BufferUsage usage) where T : unmanaged {
+			BufferData(target, data, data.Length, usage);
+		}
+
+		public unsafe void BufferData<T>(BufferTarget target, int length, BufferUsage usage) where T : unmanaged {
+			BufferData(target, length * Marshal.SizeOf<T>(), null, usage);
 		}
 
 		protected abstract unsafe void BufferSubData(BufferTarget target, IntPtr offset, GLsizei size, void* data);
@@ -465,6 +473,24 @@ namespace Quilt.GL {
 		protected abstract void DrawElements(DrawMode mode, GLsizei count, DataType type, GLsizei offset);
 		public void DrawElements(DrawMode mode, int count, DataType type, int offset) {
 			DrawElements(mode, (GLsizei)count, type, (GLsizei)offset);
+
+			CheckError();
+		}
+
+		[UnmanagedMethod(Name = "glBlend")]
+		protected abstract void _BlendFunc(BlendFactor sourceFactor, BlendFactor destFactor);
+
+		public void BlendFunc(BlendFactor sourceFactor, BlendFactor destFactor) {
+			_BlendFunc(sourceFactor, destFactor);
+
+			CheckError();
+		}
+
+		[UnmanagedMethod(Name = "glEnable")]
+		protected abstract void _Enable(Capability capability);
+
+		public void Enable(Capability capability) {
+			_Enable(capability);
 
 			CheckError();
 		}

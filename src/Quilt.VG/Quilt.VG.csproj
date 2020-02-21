@@ -14,12 +14,14 @@
 
 
   <ItemGroup>
-    <None Remove="Shaders/Path.vert" />
-    <None Remove="Shaders/Path.frag" />
+    <None Remove="Shaders/Stroke.vert" />
+		<None Remove="Shaders/Stroke.geom" />
+    <None Remove="Shaders/Stroke.frag" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Shaders/Path.vert" />
-    <EmbeddedResource Include="Shaders/Path.frag" />
+    <EmbeddedResource Include="Shaders/Stroke.vert" />
+		<EmbeddedResource Include="Shaders/Stroke.geom" />
+    <EmbeddedResource Include="Shaders/Stroke.frag" />
   </ItemGroup>
 </Project>

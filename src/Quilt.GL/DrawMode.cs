@@ -7,9 +7,10 @@
 		Triangles = 0x0004,
 		TriangleStrip = 0x0005,
 		TriangleFan = 0x0006,
-		LinesAdjacency = 0x000A,
+		LinesWithAdjacency = 0x000A,
+		LineStripWithAdjacency = 0x000B,
 		TrianglesAdjacency = 0x000C,
-		TriangleStripAdjacency = 0x000D,
+		TriangleStripWithAdjacency = 0x000D,
 		Patches = 0x000E
 	}
 }

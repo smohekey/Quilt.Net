@@ -115,6 +115,8 @@
 
 		public abstract void PostEmptyEvent();
 
+		public abstract void SwapInterval(int interval);
+
 		protected abstract IntPtr CreateWindow(int width, int height, string title, IntPtr monitor, IntPtr share);
 
 		public GLFWWindow CreateWindow(int width, int height, string title) {

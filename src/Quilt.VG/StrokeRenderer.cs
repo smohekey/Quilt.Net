@@ -5,15 +5,13 @@
 	using Quilt.GL;
 
 	internal class StrokeRenderer : Renderer {
-		private const int BUFFER_SIZE = 1024;
-
 		private static readonly int __uintSize = Marshal.SizeOf<uint>();
 		private static readonly int __vector2Size = Marshal.SizeOf<Vector2>();
 		private static readonly int __vector4Size = Marshal.SizeOf<Vector4>();
 		private static readonly int __floatSize = Marshal.SizeOf<float>();
 		private static readonly int __pointSize = Marshal.SizeOf<Point>();
 
-		private readonly Point[] _points = new Point[BUFFER_SIZE];
+		private readonly Point[] _points = new Point[Constants.BUFFER_SIZE];
 
 		private readonly GLVertexArray _pointsVA;
 		private readonly GLBuffer _pointsVB;
@@ -41,7 +39,7 @@
 			gl.VertexAttribPointer(index++, 2, DataType.Float, false, __pointSize, offset); offset += __vector2Size; // Position
 			gl.VertexAttribPointer(index++, 1, DataType.UnsignedInt, false, __pointSize, offset); offset += __uintSize; // Flags
 			gl.VertexAttribPointer(index++, 4, DataType.Float, false, __pointSize, offset); offset += __vector4Size; // Color
-			gl.VertexAttribPointer(index++, 1, DataType.Float, false, __pointSize, offset); offset += __floatSize; // Width			
+			gl.VertexAttribPointer(index++, 1, DataType.Float, false, __pointSize, offset); offset += __floatSize; // Width
 
 			var assembly = typeof(VGContext).Assembly;
 
@@ -61,7 +59,7 @@
 			_miterLimitUniform = _gl.GetUniformLocation(_program, "_miterLimit");
 		}
 
-		public override void Render(FrameBuilder frame, Matrix4x4 projection, Vector2 viewport, CommandList commands) {
+		public override void Render(FrameBuilder frame, Matrix4x4 projection, Vector2 viewport, Path path) {
 			_gl.UseProgram(_program);
 
 			_gl.UniformMatrix(_projectionUniform, 1, false, projection);
@@ -81,7 +79,7 @@
 			var tail1 = default(Point);
 			var tail2 = default(Point);
 
-			var mainEnumerator = commands.GetEnumerator();
+			var mainEnumerator = path.GetEnumerator();
 
 			while (mainEnumerator.MoveNext()) {
 				var command = mainEnumerator.Current;
@@ -208,7 +206,6 @@
 			}
 		}
 
-		[StructLayout(LayoutKind.Sequential)]
 		private struct Point {
 			public Vector2 Position;
 			public StrokeFlags Flags;

@@ -48,18 +48,18 @@
 			return this;
 		}
 
-		public IPathBuilder CreatePath(Vector2 start) {
-			return new PathBuilder(this, new CommandList()).SetPosition(start);
+		public IPathBuilder CreatePath(bool closed = true) {
+			return new PathBuilder(this, new Path(closed));
 		}
 
 		public IFrameBuilder FillPath(IPathBuilder path) {
-			_vg._fillRenderer.Render(this, _projection, _viewport, path.Commands);
+			_vg._fillRenderer.Render(this, _projection, _viewport, path.Path);
 
 			return this;
 		}
 
 		public IFrameBuilder StrokePath(IPathBuilder path) {
-			_vg._strokeRenderer.Render(this, _projection, _viewport, path.Commands);
+			_vg._strokeRenderer.Render(this, _projection, _viewport, path.Path);
 
 			return this;
 		}

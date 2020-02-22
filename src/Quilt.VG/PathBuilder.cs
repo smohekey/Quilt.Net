@@ -1,9 +1,9 @@
 ﻿namespace Quilt.VG {
 	using System.Numerics;
 
-	public class PathBuilder : IPathBuilder {
+	public class PathBuilder : IPathBuilder, IFinishingPathBuilder {
 		public IFrameBuilder Frame { get; }
-		public CommandList Commands { get; }
+		public Path Path { get; }
 
 		private Vector2 _position;
 		public Vector2 Position {
@@ -13,7 +13,7 @@
 			set {
 				_position = value;
 
-				Commands.Append(new Command {
+				Path.Append(new Command {
 					Type = CommandType.SetPosition,
 					Position = value
 				});
@@ -28,7 +28,7 @@
 			set {
 				_strokeColor = value;
 
-				Commands.Append(new Command {
+				Path.Append(new Command {
 					Type = CommandType.SetStrokeColor,
 					StrokeColor = value
 				});
@@ -43,24 +43,9 @@
 			set {
 				_strokeWidth = value;
 
-				Commands.Append(new Command {
+				Path.Append(new Command {
 					Type = CommandType.SetStrokeWidth,
 					StrokeWidth = value
-				});
-			}
-		}
-
-		private float _strokeMiter;
-		public float StrokeMiter {
-			get {
-				return _strokeMiter;
-			}
-			set {
-				_strokeMiter = value;
-
-				Commands.Append(new Command {
-					Type = CommandType.SetStrokeMiter,
-					StrokeMiter = value
 				});
 			}
 		}
@@ -73,7 +58,7 @@
 			set {
 				_strokeFlags = value;
 
-				Commands.Append(new Command {
+				Path.Append(new Command {
 					Type = CommandType.SetStrokeFlags,
 					StrokeFlags = value
 				});
@@ -88,20 +73,26 @@
 			set {
 				_fillColor = value;
 
-				Commands.Append(new Command {
+				Path.Append(new Command {
 					Type = CommandType.SetFillColor,
 					FillColor = value
 				});
 			}
 		}
 
-		public PathBuilder(IFrameBuilder frame, CommandList commandList) {
+		public PathBuilder(IFrameBuilder frame, Path commandList) {
 			Frame = frame;
-			Commands = commandList;
+			Path = commandList;
 		}
 
 		public IPathBuilder SetPosition(Vector2 position) {
 			Position = position;
+
+			return this;
+		}
+
+		IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetPosition(Vector2 position) {
+			SetPosition(position);
 
 			return this;
 		}
@@ -112,14 +103,20 @@
 			return this;
 		}
 
+		IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetStrokeColor(Vector4 strokeColor) {
+			SetStrokeColor(strokeColor);
+
+			return this;
+		}
+
 		public IPathBuilder SetStrokeWidth(float strokeWidth) {
 			StrokeWidth = strokeWidth;
 
 			return this;
 		}
 
-		public IPathBuilder SetStrokeMiter(float strokeMiter) {
-			StrokeMiter = strokeMiter;
+		IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetStrokeWidth(float strokeWidth) {
+			SetStrokeWidth(strokeWidth);
 
 			return this;
 		}
@@ -130,22 +127,44 @@
 			return this;
 		}
 
+		IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetStrokeFlags(StrokeFlags strokeFlags) {
+			SetStrokeFlags(strokeFlags);
+
+			return this;
+		}
+
 		public IPathBuilder SetFillColor(Vector4 fillColor) {
 			FillColor = fillColor;
 
 			return this;
 		}
 
-		public IPathBuilder Fill() {
+		IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetFillColor(Vector4 fillColor) {
+			SetFillColor(fillColor);
+
+			return this;
+		}
+
+		public IFinishingPathBuilder MoveTo(Vector2 position) {
+			SetPosition(position);
+
+			return this;
+		}
+
+		public IFinishingPathBuilder Fill() {
 			Frame.FillPath(this);
 
 			return this;
 		}
 
-		public IPathBuilder Stroke() {
+		public IFinishingPathBuilder Stroke() {
 			Frame.StrokePath(this);
 
 			return this;
+		}
+
+		public IFrameBuilder Finish() {
+			return Frame;
 		}
 	}
 }

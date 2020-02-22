@@ -1,13 +1,13 @@
 ﻿namespace Quilt.VG {
 	using System;
-  using System.Numerics;
+	using System.Numerics;
 
-  public static class BezierExtensions {
-		public static IPathBuilder BezierTo(this IPathBuilder @this, float x1, float y1, float x2, float y2, float x3, float y3) {
+	public static class BezierExtensions {
+		public static IFinishingPathBuilder BezierTo(this IFinishingPathBuilder @this, float x1, float y1, float x2, float y2, float x3, float y3) {
 			return @this.BezierTo(new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(x3, y3));
 		}
 
-		public static IPathBuilder BezierTo(this IPathBuilder @this, Vector2 p1, Vector2 p2, Vector2 p3) {
+		public static IFinishingPathBuilder BezierTo(this IFinishingPathBuilder @this, Vector2 p1, Vector2 p2, Vector2 p3) {
 			var p0 = @this.Position;
 
 			const int COUNT = 100;

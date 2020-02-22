@@ -1,24 +1,30 @@
 ﻿namespace Quilt.VG {
-  using System;
-  using System.Buffers;
+	using System;
+	using System.Buffers;
 	using System.Collections;
 	using System.Collections.Generic;
 
-  public class CommandList : IEnumerable<Command> {
+	public class Path : IEnumerable<Command> {
 		private const int SEGMENT_SIZE = 1024;
 
 		private static readonly ArrayPool<Command> __arrayPool = ArrayPool<Command>.Create();
 
 		private readonly List<Segment> _segments = new List<Segment>();
 
+		public bool Closed { get; }
+
 		private Segment LastSegment {
 			get {
-				return _segments[_segments.Count - 1];
+				return _segments[^1];
 			}
 		}
 
+		public Path(bool closed) {
+			Closed = closed;
+		}
+
 		public void Append(Command command) {
-			if(_segments.Count == 0 || LastSegment.IsFull) {
+			if (_segments.Count == 0 || LastSegment.IsFull) {
 				_segments.Add(new Segment(__arrayPool.Rent(SEGMENT_SIZE)));
 			}
 
@@ -28,7 +34,7 @@
 		}
 
 		public void Clear() {
-			foreach(var segment in _segments) {
+			foreach (var segment in _segments) {
 				__arrayPool.Return(segment._commands);
 			}
 
@@ -87,7 +93,7 @@
 			}
 
 			public bool MoveNext() {
-				if(_segmentIndex == -1) {
+				if (_segmentIndex == -1) {
 					_segmentIndex++;
 				}
 

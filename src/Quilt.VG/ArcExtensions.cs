@@ -1,19 +1,19 @@
 ﻿namespace Quilt.VG {
-  using System;
-  using System.Numerics;
+	using System;
+	using System.Numerics;
 
 	public static class ArcExtensions {
-		public static IPathBuilder ArcTo(this IPathBuilder @this, float x, float y, float radius, bool clockwise) {
+		public static IFinishingPathBuilder ArcTo(this IFinishingPathBuilder @this, float x, float y, float radius, bool clockwise) {
 			return @this.ArcTo(new Vector2(x, y), radius, clockwise);
 		}
 
-		public static IPathBuilder ArcTo(this IPathBuilder @this, Vector2 p1, float radius, bool clockwise) {
+		public static IFinishingPathBuilder ArcTo(this IFinishingPathBuilder @this, Vector2 p1, float radius, bool clockwise) {
 			var p0 = @this.Position;
 
 			return @this.Arc(p0, p1, radius, clockwise);
 		}
 
-		private static IPathBuilder Arc(this IPathBuilder @this, Vector2 p0, Vector2 p1, float radius, bool clockwise) {
+		private static IFinishingPathBuilder Arc(this IFinishingPathBuilder @this, Vector2 p0, Vector2 p1, float radius, bool clockwise) {
 			var pC = GetArcCenter(p0, p1, radius, clockwise);
 
 			var a0 = MathF.Atan2(p0.Y - pC.Y, p0.X - p0.X);
@@ -39,7 +39,7 @@
 				}
 			}
 
-			var segmentCount = Math.Abs(2 * MathF.PI * radius * (deltaAngle / 360) * Constants.RAD_2_DEG) / 2;
+			var segmentCount = Math.Abs(2 * MathF.PI * radius * (deltaAngle / 360) * Constants.RAD_2_DEG) / 4;
 
 			for (int i = 0; i <= segmentCount; i++) {
 				var angle = a0 + deltaAngle * (i / (float)segmentCount);
@@ -66,12 +66,12 @@
 			var b = MathF.Sqrt((radius * radius) - (a * a));
 
 			if (clockwise) {
-				return new Vector2 (
+				return new Vector2(
 					xM + (b * yA) / a,
 					yM - (b * xA) / a
 				);
 			} else {
-				return new Vector2 (
+				return new Vector2(
 					xM - (b * yA) / a,
 					yM + (b * xA) / a
 				);

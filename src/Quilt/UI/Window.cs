@@ -25,6 +25,8 @@ namespace Quilt.UI {
 		private int _fbWidth;
 		private int _fbHeight;
 
+		private bool _fill = true;
+
 		protected Window(Application application) {
 			Application = application;
 
@@ -59,7 +61,6 @@ namespace Quilt.UI {
 			gl.Enable(Capability.Multisample);
 			gl.Enable(Capability.Blend);
 			gl.BlendFunc(BlendFactor.SourceAlpha, BlendFactor.OneMinusSourceAlpha);
-			gl.PolygonMode(FaceSelection.FrontAndBack, PolygonMode.Line);
 
 			_vg = new VGContext(gl);
 		}
@@ -136,17 +137,39 @@ namespace Quilt.UI {
 			//gl.Clear(BufferBit.Color | BufferBit.Depth | BufferBit.Stencil);
 			gl.Clear(BufferBit.Color);
 
+			if (_fill) {
+				gl.PolygonMode(FaceSelection.FrontAndBack, PolygonMode.Fill);
+			} else {
+				gl.PolygonMode(FaceSelection.FrontAndBack, PolygonMode.Line);
+			}
+
 			_vg.BeginFrame(width, height)
 				.SetStrokeWidth(20f)
 				.SetStrokeColor(new Vector4(0f, 0f, 0f, 1f))
-				.CreatePath(100, 100)
+				.CreatePath()
+					.MoveTo(100, 100)
 					.LineTo(200, 100)
 					.LineTo(200, 200)
 					.LineTo(100, 200)
-					.LineTo(100, 100)
-					//.Fill()
+					.Stroke()
+					.Finish()
+				.CreatePath()
+					.SetFillColor(new Vector4(0.5f, 0.5f, 0f, 1f))
+					.SetStrokeColor(new Vector4(1f, 1f, 1f, 1f))
+					.SetStrokeWidth(5)
+					.MoveTo(300, 100)
+					.ArcTo(300, 300, 100, true)
+					.Fill()
+					.Stroke()
+					.Finish()
+				.CreatePath()
+					.SetFillColor(new Vector4(0f, 0.5f, 0.5f, 1f))
+					.SetStrokeColor(new Vector4(0f, 0f, 0f, 1f))
+					.SetStrokeWidth(2f)
+					.Rectangle(100, 300, 100, 100)
+					.Fill()
 					.Stroke();
-			
+
 
 			window.SwapBuffers();
 		}
@@ -200,6 +223,10 @@ namespace Quilt.UI {
 
 				case InputState.Release: {
 					OnMouseReleased?.Invoke(this, button, modifiers);
+
+					_fill = !_fill;
+
+					HandleWindowRefresh(window);
 
 					break;
 				}

@@ -18,12 +18,8 @@
 
 		IFrameBuilder SetFillColor(Vector4 fillColor);
 
-		IPathBuilder CreatePath(Vector2 start);
+		IPathBuilder CreatePath(bool closed = true);
 		IFrameBuilder StrokePath(IPathBuilder path);
 		IFrameBuilder FillPath(IPathBuilder path);
-
-		public IPathBuilder CreatePath(float x, float y) {
-			return CreatePath(new Vector2(x, y));
-		}
 	}
 }

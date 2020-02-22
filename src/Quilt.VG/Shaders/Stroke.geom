@@ -4,11 +4,10 @@ layout (lines_adjacency) in;
 layout (triangle_strip, max_vertices = 7) out;
 
 uniform vec2 _viewport;
-uniform float _strokeWidth;
 uniform float _miterLimit;
-uniform float _alpha;
 
 in VS_OUT {
+	uint flags;
     vec4 color;
 	float width;
 } gs_in[];
@@ -45,7 +44,7 @@ void main() {
 
 	if( dot( v0, v1 ) < -_miterLimit ) {
         miter_a = n1;
-        length_a = _strokeWidth;
+        length_a = gs_in[1].width;
 
         /* close the gap */
         if( dot( v0, n1 ) > 0 ) {
@@ -81,7 +80,7 @@ void main() {
 
     if(dot(v1, v2) < -_miterLimit) {
         miter_b = n1;
-        length_b = gs_in[1].width;
+        length_b = gs_in[2].width;
     }
 
     // generate the triangle strip

@@ -17,11 +17,17 @@
     <None Remove="Shaders/Stroke.vert" />
 		<None Remove="Shaders/Stroke.geom" />
     <None Remove="Shaders/Stroke.frag" />
+    <None Remove="Shaders/Fill.frag" />
+    <None Remove="Shaders/Fill.geom" />
+    <None Remove="Shaders/Fill.vert" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Shaders/Stroke.vert" />
 		<EmbeddedResource Include="Shaders/Stroke.geom" />
     <EmbeddedResource Include="Shaders/Stroke.frag" />
+    <EmbeddedResource Include="Shaders/Fill.frag" />
+    <EmbeddedResource Include="Shaders/Fill.geom" />
+    <EmbeddedResource Include="Shaders/Fill.vert" />
   </ItemGroup>
 </Project>

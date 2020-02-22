@@ -19,6 +19,12 @@ namespace Quilt.GL {
 		protected GLContext(UnmanagedLibrary library) : base(library, null!, 0) {
 			DebugMessageCallback(_debugMessage = new DebugMessageCallback(HandleDebugMessage), IntPtr.Zero);
 			DebugMessageControl(DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, 0, null, true);
+
+#if DEBUG
+			foreach(var name in Enum.GetNames(typeof(StringName))) {
+				Console.WriteLine(GetString(Enum.Parse<StringName>(name)));
+			}
+#endif
 		}
 
 		private void HandleDebugMessage(DebugSource source, DebugType type, uint id, DebugSeverity severity, GLsizei length, string message, IntPtr userParam) {
@@ -335,7 +341,7 @@ namespace Quilt.GL {
 		[UnmanagedMethod(Name = "glEnableVertexAttribArray")]
 		protected abstract void _EnableVertexAttribArray(uint index);
 
-		[UnmanagedMethod(Name = "glDIsableVertexAttribArray")]
+		[UnmanagedMethod(Name = "glDisableVertexAttribArray")]
 		protected abstract void _DisableVertexAttribArray(uint index);
 		protected abstract void EnableVertexArrayAttrib(uint vertexArray, uint index);
 		protected abstract void DisableVertexArrayAttrib(uint vertexArray, uint index);
@@ -477,7 +483,7 @@ namespace Quilt.GL {
 			CheckError();
 		}
 
-		[UnmanagedMethod(Name = "glBlend")]
+		[UnmanagedMethod(Name = "glBlendFunc")]
 		protected abstract void _BlendFunc(BlendFactor sourceFactor, BlendFactor destFactor);
 
 		public void BlendFunc(BlendFactor sourceFactor, BlendFactor destFactor) {
@@ -493,6 +499,17 @@ namespace Quilt.GL {
 			_Enable(capability);
 
 			CheckError();
+		}
+
+		[UnmanagedMethod(Name ="glGetString")]
+		protected abstract string _GetString(StringName name);
+
+		public string GetString(StringName name) {
+			var result = _GetString(name);
+
+			CheckError();
+
+			return result;
 		}
 
 		protected abstract void DebugMessageControl(DebugSource source​, DebugType type​, DebugSeverity severity​, GLsizei count​, uint[]? ids​, bool enabled​);

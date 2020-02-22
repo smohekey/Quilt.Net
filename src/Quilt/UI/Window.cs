@@ -59,6 +59,7 @@ namespace Quilt.UI {
 			gl.Enable(Capability.Multisample);
 			gl.Enable(Capability.Blend);
 			gl.BlendFunc(BlendFactor.SourceAlpha, BlendFactor.OneMinusSourceAlpha);
+			gl.PolygonMode(FaceSelection.FrontAndBack, PolygonMode.Line);
 
 			_vg = new VGContext(gl);
 		}
@@ -135,41 +136,17 @@ namespace Quilt.UI {
 			//gl.Clear(BufferBit.Color | BufferBit.Depth | BufferBit.Stencil);
 			gl.Clear(BufferBit.Color);
 
-			_vg.BeginFrame(width, height);
-
-			_vg.StrokeWidth = 20f;
-			_vg.StrokeColor = new Vector4(0f, 0f, 0f, 1f);
-			_vg.Alpha = 0.5f;
-
-			_vg.BeginPath(100, 100);
-			_vg.StrokeWidth = 20f;
-			//_vg.StrokeColor = new Vector4(0.5f, 1f, 1f, 1f);
-			_vg.LineTo(200, 100);
-			_vg.StrokeWidth = 20f;
-			//_vg.StrokeColor = new Vector4(0.5f, 0.5f, 1f, 1f);
-			_vg.LineTo(200, 200);
-			_vg.StrokeWidth = 20f;
-			//_vg.StrokeColor = new Vector4(0.5f, 0.5f, 0.5f, 1f);
-			_vg.LineTo(100, 200);
-			_vg.StrokeWidth = 20f;
-			//_vg.StrokeColor = new Vector4(0f, 1f, 1f, 1f);
-			_vg.LineTo(100, 100);
-			_vg.StrokeWidth = 20f;
-			//_vg.StrokeColor = new Vector4(0f, 0f, 1f, 1f);
-			_vg.LineTo(50, 50);
-			_vg.Stroke();
-
-			_vg.BeginPath(200, 100);
-			_vg.StrokeWidth = 2f;
-			_vg.StrokeColor = new Vector4(1f, 1f, 1f, 1f);
-			_vg.ArcTo(200, 200, 50, true);
-			_vg.Stroke();
-
-			_vg.BeginPath(300, 100);
-			_vg.StrokeWidth = 20f;
-			_vg.StrokeColor = new Vector4(0f, 1f, 0f, 1f);
-			_vg.BezierTo(300, 200, 200, 200, 300, 300);
-			_vg.Stroke();
+			_vg.BeginFrame(width, height)
+				.SetStrokeWidth(20f)
+				.SetStrokeColor(new Vector4(0f, 0f, 0f, 1f))
+				.CreatePath(100, 100)
+					.LineTo(200, 100)
+					.LineTo(200, 200)
+					.LineTo(100, 200)
+					.LineTo(100, 100)
+					//.Fill()
+					.Stroke();
+			
 
 			window.SwapBuffers();
 		}

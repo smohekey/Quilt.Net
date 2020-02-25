@@ -21,7 +21,7 @@ namespace Quilt.GL {
 			DebugMessageControl(DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, 0, null, true);
 
 #if DEBUG
-			foreach(var name in Enum.GetNames(typeof(StringName))) {
+			foreach (var name in Enum.GetNames(typeof(StringName))) {
 				Console.WriteLine(GetString(Enum.Parse<StringName>(name)));
 			}
 #endif
@@ -494,14 +494,21 @@ namespace Quilt.GL {
 
 		[UnmanagedMethod(Name = "glEnable")]
 		protected abstract void _Enable(Capability capability);
-
 		public void Enable(Capability capability) {
 			_Enable(capability);
 
 			CheckError();
 		}
 
-		[UnmanagedMethod(Name ="glGetString")]
+		[UnmanagedMethod(Name = "glDisable")]
+		protected abstract void _Disable(Capability capability);
+		public void Disable(Capability capability) {
+			_Disable(capability);
+
+			CheckError();
+		}
+
+		[UnmanagedMethod(Name = "glGetString")]
 		protected abstract string _GetString(StringName name);
 
 		public string GetString(StringName name) {
@@ -510,6 +517,47 @@ namespace Quilt.GL {
 			CheckError();
 
 			return result;
+		}
+
+		[UnmanagedMethod(Name = "glStencilMask")]
+		protected abstract void _StencilMask(uint mask);
+
+		public void StencilMask(uint mask) {
+			_StencilMask(mask);
+
+			CheckError();
+		}
+
+		[UnmanagedMethod(Name = "glStencilOp")]
+		protected abstract void _StencilOp(StencilOperation stencilFail, StencilOperation depthTestFail, StencilOperation depthTestPass);
+		public void StencilOp(StencilOperation stencilFail, StencilOperation depthTestFail, StencilOperation depthTestPass) {
+			_StencilOp(stencilFail, depthTestFail, depthTestPass);
+
+			CheckError();
+		}
+
+		[UnmanagedMethod(Name = "glStencilFunc")]
+		protected abstract void _StencilFunc(StencilFunc func, int @ref, uint mask);
+		public void StencilFunc(StencilFunc func, int @ref, uint mask) {
+			_StencilFunc(func, @ref, mask);
+
+			CheckError();
+		}
+
+		[UnmanagedMethod(Name = "glClearStencil")]
+		protected abstract void _ClearStencil(int index);
+		public void ClearStencil(int index) {
+			_ClearStencil(index);
+
+			CheckError();
+		}
+
+		[UnmanagedMethod(Name = "glColorMask")]
+		protected abstract void _ColorMask(bool red, bool green, bool blue, bool alpha);
+		public void ColorMask(bool red, bool green, bool blue, bool alpha) {
+			_ColorMask(red, green, blue, alpha);
+
+			CheckError();
 		}
 
 		protected abstract void DebugMessageControl(DebugSource source​, DebugType type​, DebugSeverity severity​, GLsizei count​, uint[]? ids​, bool enabled​);

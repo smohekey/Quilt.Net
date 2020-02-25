@@ -1,126 +1,248 @@
 ﻿namespace Quilt.VG {
 	using System;
-	using System.Buffers;
 	using System.Collections;
 	using System.Collections.Generic;
+	using System.Numerics;
+	using Quilt.Collections;
 
-	public class Path : IEnumerable<Command> {
-		private const int SEGMENT_SIZE = 1024;
+	public class Path : IPath {
+		private readonly FrameBuilder _frameBuilder;
+		private readonly PooledArray<PathPoint> _points = new PooledArray<PathPoint>();
+		private readonly Lazy<WindingOrder> _windingOrder;
 
-		private static readonly ArrayPool<Command> __arrayPool = ArrayPool<Command>.Create();
+		public WindingOrder WindingOrder => _windingOrder.Value;
 
-		private readonly List<Segment> _segments = new List<Segment>();
+		private Path(FrameBuilder frameBuilder, PooledArray<PathPoint> points) {
+			_frameBuilder = frameBuilder;
+			_points = points;
+			_windingOrder = new Lazy<WindingOrder>(DetermineWindingOrder, true);
 
-		public bool Closed { get; }
+			ClassifyPoints();
+		}
 
-		private Segment LastSegment {
-			get {
-				return _segments[^1];
+		private void ClassifyPoints() {
+			var concaveCount = 0;
+			var pointCount = _points.Length;
+
+			if (WindingOrder == WindingOrder.CounterClockwise) {
+				for (int i = 0, j = pointCount - 1; i != j; i++, j--) {
+					var temp = _points[j];
+					_points[j] = _points[i];
+					_points[j] = temp;
+				}
+			}
+
+			for (int i = 0; i < pointCount - 1; i++) {
+				if (i == 0) {
+					if (Triangle.IsConvex(_points[pointCount - 2].Position, _points[i].Position, _points[i + 1].Position)) {
+						_points[i].Curvature = Curvature.Convex;
+					} else {
+						_points[i].Curvature = Curvature.Concave;
+
+						concaveCount++;
+					}
+				} else {
+					if (Triangle.IsConvex(_points[i - 1].Position, _points[i].Position, _points[i + 1].Position)) {
+						_points[i].Curvature = Curvature.Convex;
+					} else {
+						_points[i].Curvature = Curvature.Concave;
+
+						concaveCount++;
+					}
+				}
 			}
 		}
 
-		public Path(bool closed) {
-			Closed = closed;
+		public IPath Fill() {
+			_frameBuilder.FillPath(this);
+
+			return this;
 		}
 
-		public void Append(Command command) {
-			if (_segments.Count == 0 || LastSegment.IsFull) {
-				_segments.Add(new Segment(__arrayPool.Rent(SEGMENT_SIZE)));
-			}
+		public IPath Stroke() {
+			_frameBuilder.StrokePath(this);
 
-			var segment = LastSegment;
-
-			segment.Append(command);
+			return this;
 		}
 
-		public void Clear() {
-			foreach (var segment in _segments) {
-				__arrayPool.Return(segment._commands);
-			}
-
-			_segments.Clear();
+		public IFrameBuilder Finish() {
+			return _frameBuilder;
 		}
 
-		public IEnumerator<Command> GetEnumerator() {
-			return new Enumerator(_segments);
+		public IEnumerator<PathPoint> GetEnumerator() {
+			return _points.GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() {
 			return GetEnumerator();
 		}
 
-		private class Segment {
-			internal readonly Command[] _commands;
-			internal int _commandCount;
-
-			public Segment(Command[] commands) {
-				_commands = commands;
-				_commandCount = 0;
-			}
-
-			public bool IsFull {
-				get {
-					return _commandCount == _commands.Length;
-				}
-			}
-			public void Append(Command command) {
-				_commands[_commandCount++] = command;
-			}
+		public IEnumerator<PathPoint> GetReverseEnumerator() {
+			return _points.GetReverseEnumerator();
 		}
 
-		// We use a struct enumerator so that callers can take a copy and 'fork' enumeration
-		private struct Enumerator : IEnumerator<Command> {
-			private readonly List<Segment> _segments;
-			private int _segmentIndex;
-			private int _index;
+		private WindingOrder DetermineWindingOrder() {
+			int pointCount = _points.Length;
 
-			public Enumerator(List<Segment> segments) {
-				_segments = segments;
-				_segmentIndex = -1;
-				_index = -1;
+			// If vertices duplicates first as last to represent closed polygon,
+			// skip last.
+			PathPoint first = _points[0];
+			PathPoint last = _points[^1];
+
+			if (last.Position.Equals(first.Position)) {
+				pointCount -= 1;
 			}
 
-			public Command Current {
-				get {
-					return _segments[_segmentIndex]?._commands[_index] ?? throw new InvalidOperationException();
+			var minVertex = FindCornerVertex(_points);
+
+			// Orientation matrix:
+			//     [ 1  xa  ya ]
+			// O = | 1  xb  yb |
+			//     [ 1  xc  yc ]
+			Vector2 a = _points[WrapAt(minVertex - 1, pointCount)].Position;
+			Vector2 b = _points[minVertex].Position;
+			Vector2 c = _points[WrapAt(minVertex + 1, pointCount)].Position;
+
+			// determinant(O) = (xb*yc + xa*yb + ya*xc) - (ya*xb + yb*xc + xa*yc)
+			var detOrient = b.X * c.Y + a.X * b.Y + a.Y * c.X - (a.Y * b.X + b.Y * c.X + a.X * c.Y);
+
+			// TBD: check for "==0", in which case is not defined?
+			// Can that happen?  Do we need to check other vertices / eliminate duplicate vertices?
+			WindingOrder result = detOrient > 0
+							? WindingOrder.Clockwise
+							: WindingOrder.CounterClockwise;
+			return result;
+		}
+
+		// Find vertex along one edge of bounding box.
+		// In this case, we find smallest y; in case of tie also smallest x.
+		private static int FindCornerVertex(PooledArray<PathPoint> points) {
+			var minVertex = -1;
+			var minY = float.MaxValue;
+			var minXAtMinY = float.MaxValue;
+
+			for (var i = 0; i < points.Length; i++) {
+				Vector2 vert = points[i].Position;
+
+				var y = vert.Y;
+
+				if (y > minY) {
+					continue;
 				}
-			}
 
-			object? IEnumerator.Current {
-				get {
-					return Current;
-				}
-			}
-
-			public bool MoveNext() {
-				if (_segmentIndex == -1) {
-					_segmentIndex++;
-				}
-
-				while (true) {
-					if (_segmentIndex >= _segments.Count) {
-						return false;
-					}
-
-					_index++;
-
-					if (_index >= _segments[_segmentIndex]._commandCount) {
-						_segmentIndex++;
-
+				if (y == minY) {
+					if (vert.X >= minXAtMinY) {
 						continue;
 					}
-
-					return true;
 				}
+
+				// Minimum so far.
+				minVertex = i;
+				minY = y;
+				minXAtMinY = vert.X;
 			}
 
-			public void Reset() {
-				_segmentIndex = -1;
-				_index = -1;
+			return minVertex;
+		}
+
+		// Return value in (0..n-1).
+		// Works for i in (-n..+infinity).
+		// If need to allow more negative values, need more complex formula.
+		private static int WrapAt(int i, int n) {
+			// "+n": Moves (-n..) up to (0..).
+			return (i + n) % n;
+		}
+
+		public class Builder : IPathBuilder, IFinishingPathBuilder {
+			private readonly FrameBuilder _frameBuilder;
+			private readonly PooledArray<PathPoint> _points = new PooledArray<PathPoint>();
+
+			public Vector2 Position { get; private set; }
+			public Color StrokeColor { get; set; }
+			public float StrokeWidth { get; set; }
+			public StrokeFlags StrokeFlags { get; set; }
+			public Color FillColor { get; set; }
+
+			public Builder(FrameBuilder frameBuilder) {
+				_frameBuilder = frameBuilder;
 			}
 
-			public void Dispose() {
+			public IPathBuilder AddPoint(Vector2 position) {
+				Position = position;
 
+				_points[_points.Length++] = new PathPoint(
+					Position = position,
+					StrokeColor = StrokeColor,
+					StrokeWidth = StrokeWidth,
+					StrokeFlags = StrokeFlags,
+					FillColor = FillColor
+				);
+
+				return this;
+			}
+
+			IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.AddPoint(Vector2 position) {
+				AddPoint(position);
+
+				return this;
+			}
+
+			public IPathBuilder SetStrokeColor(Color strokeColor) {
+				StrokeColor = strokeColor;
+
+				return this;
+			}
+
+			IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetStrokeColor(Color strokeColor) {
+				SetStrokeColor(strokeColor);
+
+				return this;
+			}
+
+			public IPathBuilder SetStrokeWidth(float strokeWidth) {
+				StrokeWidth = strokeWidth;
+
+				return this;
+			}
+
+			IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetStrokeWidth(float strokeWidth) {
+				SetStrokeWidth(strokeWidth);
+
+				return this;
+			}
+
+			public IPathBuilder SetStrokeFlags(StrokeFlags strokeFlags) {
+				StrokeFlags = strokeFlags;
+
+				return this;
+			}
+
+			IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetStrokeFlags(StrokeFlags strokeFlags) {
+				SetStrokeFlags(strokeFlags);
+
+				return this;
+			}
+
+			public IPathBuilder SetFillColor(Color fillColor) {
+				FillColor = fillColor;
+
+				return this;
+			}
+
+			IFinishingPathBuilder IBasePathBuilder<IFinishingPathBuilder>.SetFillColor(Color fillColor) {
+				SetFillColor(fillColor);
+
+				return this;
+			}
+
+			public IFinishingPathBuilder MoveTo(Vector2 position) {
+				AddPoint(position);
+
+				return this;
+			}
+
+			public IPath Build() {
+				return new Path(_frameBuilder, _points);
 			}
 		}
 	}

@@ -10,15 +10,16 @@
     <ProjectReference Include="..\Quilt.GL\Quilt.GL.csproj" />
     <ProjectReference Include="..\Quilt.GLFW\Quilt.GLFW.csproj" />
     <ProjectReference Include="..\Quilt.VG\Quilt.VG.csproj" />
+    <ProjectReference Include="..\Quilt.Typography\Quilt.Typography.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="UI/Shaders/lines.vert"/>
-    <None Remove="UI/Shaders/lines.frag"/>
+    <None Remove="UI/Shaders/lines.vert" />
+    <None Remove="UI/Shaders/lines.frag" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="UI/Shaders/lines.vert"/>
-    <EmbeddedResource Include="UI/Shaders/lines.frag"/>
+    <EmbeddedResource Include="UI/Shaders/lines.vert" />
+    <EmbeddedResource Include="UI/Shaders/lines.frag" />
   </ItemGroup>
 </Project>

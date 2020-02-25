@@ -7,7 +7,7 @@
 		}
 
 		public static IFinishingPathBuilder LineTo(this IFinishingPathBuilder @this, Vector2 p) {
-			return @this.SetPosition(p);
+			return @this.AddPoint(p);
 		}
 	}
 }

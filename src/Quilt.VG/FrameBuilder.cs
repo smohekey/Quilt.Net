@@ -12,13 +12,13 @@
 			_viewport = viewport;
 		}
 
-		public Vector4 StrokeColor { get; set; }
+		public Color StrokeColor { get; set; }
 		public float StrokeWidth { get; set; }
 		public float StrokeMiter { get; set; }
 		public StrokeFlags StrokeFlags { get; set; }
-		public Vector4 FillColor { get; set; }
+		public Color FillColor { get; set; }
 
-		public IFrameBuilder SetStrokeColor(Vector4 strokeColor) {
+		public IFrameBuilder SetStrokeColor(Color strokeColor) {
 			StrokeColor = strokeColor;
 
 			return this;
@@ -42,24 +42,24 @@
 			return this;
 		}
 
-		public IFrameBuilder SetFillColor(Vector4 fillColor) {
+		public IFrameBuilder SetFillColor(Color fillColor) {
 			FillColor = fillColor;
 
 			return this;
 		}
 
-		public IPathBuilder CreatePath(bool closed = true) {
-			return new PathBuilder(this, new Path(closed));
+		public IPathBuilder CreatePath() {
+			return new Path.Builder(this);
 		}
 
-		public IFrameBuilder FillPath(IPathBuilder path) {
-			_vg._fillRenderer.Render(this, _projection, _viewport, path.Path);
+		public IFrameBuilder FillPath(IPath path) {
+			_vg._fillRenderer.Render(this, _projection, _viewport, path);
 
 			return this;
 		}
 
-		public IFrameBuilder StrokePath(IPathBuilder path) {
-			_vg._strokeRenderer.Render(this, _projection, _viewport, path.Path);
+		public IFrameBuilder StrokePath(IPath path) {
+			_vg._strokeRenderer.Render(this, _projection, _viewport, path);
 
 			return this;
 		}

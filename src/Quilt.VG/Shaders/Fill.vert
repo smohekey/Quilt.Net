@@ -1,14 +1,12 @@
 #version 430
-layout (location = 0) in vec2 position;
-layout (location = 1) in vec4 color;
+layout (location = 0) in vec2 _position;
+layout (location = 1) in vec4 _color;
 
 uniform mat4 _projection;
 
-out VS_OUT {
-  vec4 color;
-} vs_out;
+out vec4 color;
 
 void main() {
-	vs_out.color = color;
-	gl_Position = _projection * vec4(position.xy, 1.0, 1.0);
+	color = _color;
+	gl_Position = _projection * vec4(_position.xy, 0.0, 1.0);
 }

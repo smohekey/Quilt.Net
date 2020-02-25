@@ -15,7 +15,7 @@ in VS_OUT {
 out vec4 color;
 
 vec2 toScreenSpace(vec4 vertex) {
-	return vec2(vertex.xy / vertex.w) * _viewport;
+    return vec2(vertex.xy / vertex.w) * _viewport;
 }
 
 void main() {
@@ -39,8 +39,8 @@ void main() {
 	float bn1 = dot(miter_b, n2);
 	if (an1==0) an1 = 1;
 	if (bn1==0) bn1 = 1;
-	float length_a = gs_in[1].width / an1;
-	float length_b = gs_in[2].width / bn1;
+	float length_a = gs_in[1].width / an1 / 2;
+	float length_b = gs_in[2].width / bn1 / 2;
 
 	if( dot( v0, v1 ) < -_miterLimit ) {
         miter_a = n1;
@@ -57,21 +57,21 @@ void main() {
             EmitVertex();
 
 			color = gs_in[1].color;
-            gl_Position = vec4( p1 , 0, 1.0 );
+            gl_Position = vec4(p1 / _viewport, 0, 1.0);
             EmitVertex();
 
             EndPrimitive();
         } else {
 			color = gs_in[1].color;
-            gl_Position = vec4( ( p1 - gs_in[1].width * n1 ) / _viewport, 0, 1.0 );
+            gl_Position = vec4((p1 - gs_in[1].width * n1) / _viewport, 0, 1.0 );
             EmitVertex();
 
             color = gs_in[1].color;
-            gl_Position = vec4( ( p1 - gs_in[1].width * n0 ) / _viewport, 0, 1.0 );
+            gl_Position = vec4((p1 - gs_in[1].width * n0) / _viewport, 0, 1.0 );
             EmitVertex();
 
 			color = gs_in[1].color;
-            gl_Position = vec4( p1 , 0, 1.0 );
+            gl_Position = vec4(p1 / _viewport, 0, 1.0);
             EmitVertex();
 
             EndPrimitive();
@@ -85,19 +85,19 @@ void main() {
 
     // generate the triangle strip
     color = gs_in[1].color;;
-    gl_Position = vec4( ( p1 + length_a * miter_a ) / _viewport, 0, 1.0 );
+    gl_Position = vec4((p1 + length_a * miter_a) / _viewport, 0, 1.0 );
     EmitVertex();
 
     color = gs_in[1].color;
-    gl_Position = vec4( ( p1 - length_a * miter_a ) / _viewport, 0, 1.0 );
+    gl_Position = vec4((p1 - length_a * miter_a) / _viewport, 0, 1.0 );
     EmitVertex();
 
     color = gs_in[2].color;
-    gl_Position = vec4( ( p2 + length_b * miter_b ) / _viewport, 0, 1.0 );
+    gl_Position = vec4((p2 + length_b * miter_b) / _viewport, 0, 1.0 );
     EmitVertex();
 
     color = gs_in[2].color;
-    gl_Position = vec4( ( p2 - length_b * miter_b ) / _viewport, 0, 1.0 );
+    gl_Position = vec4((p2 - length_b * miter_b) / _viewport, 0, 1.0 );
     EmitVertex();
 
     EndPrimitive();

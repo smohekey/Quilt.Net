@@ -1,30 +1,33 @@
-﻿namespace Quilt.VG {
+﻿using System.Reflection.Metadata;
+namespace Quilt.VG {
 	using System;
 	using System.Numerics;
 	using System.Runtime.InteropServices;
+	using Quilt.Collections;
 	using Quilt.GL;
 
 	internal class FillRenderer : Renderer {
-		private readonly Point[] _points = new Point[Constants.BUFFER_SIZE];
-		private readonly int __pointSize = Marshal.SizeOf<Point>();
-		private readonly int __vector2Size = Marshal.SizeOf<Vector2>();
-		private readonly int __vector4Size = Marshal.SizeOf<Vector4>();
+		private static readonly int __pointSize = Marshal.SizeOf<Point>();
+		private static readonly int __vector2Size = Marshal.SizeOf<Vector2>();
+		private static readonly int __vector4Size = Marshal.SizeOf<Vector4>();
+
+		private readonly Point[] _pointArray = new Point[Constants.BUFFER_SIZE];
+
+		private readonly Pool<PooledList<Point>> _fragmentPool = new Pool<PooledList<Point>>();
+		private readonly PooledList<PooledList<Point>> _fragments = new PooledList<PooledList<Point>>();
 
 		private readonly GLVertexArray _pointsVA;
 		private readonly GLBuffer _pointsVB;
 		private readonly GLProgram _program;
 		private readonly int _projectionUniform;
-		private readonly int _viewportUniform;
-		private readonly int _centerPositionUniform;
-		private readonly int _centerColorUniform;
 
 		public FillRenderer(GLContext gl) : base(gl) {
-			_pointsVA = _gl.CreateVertexArray();
-			_pointsVB = _gl.CreateBuffer();
+			_pointsVA = gl.CreateVertexArray();
+			_pointsVB = gl.CreateBuffer();
 
 			gl.BindVertexArray(_pointsVA);
 			gl.BindBuffer(BufferTarget.Array, _pointsVB);
-			gl.BufferData(BufferTarget.Array, _points, BufferUsage.StreamDraw);
+			gl.BufferData(BufferTarget.Array, _pointArray, BufferUsage.StreamDraw);
 
 			gl.EnableVertexAttribArray(0);
 			gl.EnableVertexAttribArray(1);
@@ -48,62 +51,116 @@
 			using var fragmentShaderSource = assembly.GetManifestResourceStream("Quilt.VG.Shaders.Fill.frag")!;
 			using var fragmentShader = _gl.CreateFragmentShader(fragmentShaderSource);
 
-			_program = _gl.CreateProgram(vertexShader, geometryShader, fragmentShader);
+			_program = _gl.CreateProgram(vertexShader/*, geometryShader*/, fragmentShader);
 
 			_projectionUniform = _gl.GetUniformLocation(_program, "_projection");
-			_viewportUniform = _gl.GetUniformLocation(_program, "_viewport");
-			_centerPositionUniform = _gl.GetUniformLocation(_program, "_centerPosition");
-			_centerColorUniform = _gl.GetUniformLocation(_program, "_centerColor");
 		}
 
-		public override void Render(FrameBuilder frame, Matrix4x4 projection, Vector2 viewport, Path path) {
+		public override void Render(IFrameBuilder frame, Matrix4x4 projection, Vector2 viewport, IPath path) {
 			_gl.UseProgram(_program);
 
 			_gl.UniformMatrix(_projectionUniform, 1, false, projection);
-			_gl.Uniform(_viewportUniform, viewport.X, viewport.Y);
 
 			_gl.BindVertexArray(_pointsVA);
 			_gl.BindBuffer(BufferTarget.Array, _pointsVB);
 
-			var color = frame.StrokeColor;
+			_gl.Disable(Capability.CullFace);
+			_gl.Clear(BufferBit.Stencil);
+			_gl.ClearStencil(0);
 
-			var centered = false;
-			var pointCount = 0;
+			_gl.Enable(Capability.StencilTest);
 
-			foreach (var command in path) {
-				switch (command.Type) {
-					case CommandType.SetFillColor: {
-						color = command.FillColor;
+			//glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
+			//glStencilFunc(GL_ALWAYS, 1, 1);
+			_gl.ColorMask(false, false, false, false);
+			_gl.StencilMask(1);
+			_gl.StencilOp(StencilOperation.Keep, StencilOperation.Keep, StencilOperation.Invert);
+			_gl.StencilFunc(StencilFunc.Always, 0, ~0u);
 
-						break;
-					}
+			DrawPoints(path);
 
-					case CommandType.SetPosition: {
-						if (!centered) {
-							var center = Vector2.Transform(command.Position, projection);
+			//_gl.StencilMask(0);
+			_gl.StencilOp(StencilOperation.Zero, StencilOperation.Zero, StencilOperation.Zero);
+			_gl.StencilFunc(StencilFunc.EqualTo, 1, 1);
+			_gl.ColorMask(true, true, true, true);
 
-							_gl.Uniform(_centerPositionUniform, center.X, center.Y);
-							_gl.Uniform(_centerColorUniform, color.X, color.Y, color.Z, color.W);
+			DrawPoints(path);
 
-							centered = true;
+			_gl.Disable(Capability.StencilTest);
 
-							continue;
+			/*			BuildFragments(path);
+
+						foreach (var fragment in _fragments) {
+							var pointCount = 0;
+							var previousFront = default(Point?);
+							var previousBack = default(Point?);
+
+							for (int i = 0, j = fragment.Count - 1; i <= j; i++, j--) {
+								if (pointCount == 0 && previousFront.HasValue && previousBack.HasValue) {
+									_pointArray[pointCount++] = previousFront.Value;
+									_pointArray[pointCount++] = previousBack.Value;
+								}
+
+								previousFront = _pointArray[pointCount++] = fragment[i];
+								previousBack = _pointArray[pointCount++] = fragment[j];
+
+								if (pointCount >= _pointArray.Length) {
+									FlushBuffer();
+
+									pointCount = 0;
+								}
+							}
+
+							if (pointCount > 0) {
+								FlushBuffer();
+							}
+
+							void FlushBuffer() {
+			#if DEBUG
+								Console.WriteLine("Flushing fill buffer...");
+
+								for (int i = 0; i < pointCount; i++) {
+									var p = _pointArray[i];
+
+									Console.WriteLine($"{p.Position.X}, {p.Position.Y}");
+								}
+			#endif
+
+								_gl.BufferSubData(BufferTarget.Array, 0, _pointArray, __pointSize * pointCount);
+								_gl.DrawArrays(DrawMode.TriangleStrip, 0, pointCount);
+							}
 						}
 
-						_points[pointCount++] = new Point(command.Position, color);
+						foreach (var fragment in _fragments) {
+							_fragmentPool.Return(fragment);
+						}
 
-						break;
-					}
+						_fragments.Clear();*/
+		}
 
-					default: {
-						break;
-					}
+		private void DrawPoints(IPath path) {
+			var pointCount = 0;
+
+			var first = default(Point?);
+
+			foreach (var point in path) {
+				if (!first.HasValue) {
+					first = new Point(point.Position, point.FillColor);
+
+					_pointArray[pointCount++] = first.Value;
+
+					continue;
 				}
 
-				if (pointCount == _points.Length) {
+				if (pointCount == 0) {
+					_pointArray[pointCount++] = first.Value;
+				}
+
+				_pointArray[pointCount++] = new Point(point.Position, point.FillColor);
+
+				if (pointCount >= _pointArray.Length) {
 					FlushBuffer();
 
-					centered = false;
 					pointCount = 0;
 				}
 			}
@@ -114,26 +171,64 @@
 
 			void FlushBuffer() {
 #if DEBUG
-				Console.WriteLine("Flushing buffer...");
+				Console.WriteLine("Flushing fill buffer...");
 
 				for (int i = 0; i < pointCount; i++) {
-					var p = _points[i];
-					var adjacency = (i == 0 || i == pointCount - 1) ? "*" : "";
+					var p = _pointArray[i];
 
-					Console.WriteLine($"{p.Position.X}, {p.Position.Y} {adjacency}");
+					Console.WriteLine($"{p.Position.X}, {p.Position.Y}");
 				}
 #endif
 
-				_gl.BufferSubData(BufferTarget.Array, 0, _points, __pointSize * pointCount);
-				_gl.DrawArrays(DrawMode.LineStrip, 0, pointCount);
+				_gl.BufferSubData(BufferTarget.Array, 0, _pointArray, __pointSize * pointCount);
+				_gl.DrawArrays(DrawMode.TriangleFan, 0, pointCount);
 			}
 		}
 
+		// private void BuildFragments(IPath path) {
+		// 	var fragment = _fragmentPool.Rent();
+		// 	var firstFragment = default(PooledArray<Point>?);
+
+		// 	_fragments.Add(fragment);
+
+		// 	var count = 0;
+		// 	var p0 = default(Point);
+		// 	var p1 = default(Point);
+
+		// 	var right = path.WindingOrder == WindingOrder.Clockwise;
+
+		// 	var enumerator = right ? path.GetEnumerator() : path.GetReverseEnumerator();
+
+		// 	while (enumerator.MoveNext()) {
+		// 		var pathPoint = enumerator.Current;
+
+		// 		var p2 = new Point(pathPoint.Position, pathPoint.FillColor);
+
+		// 		if (count > 1) {
+		// 			if (Triangle.IsConvex(p0.Position, p1.Position, p2.Position) && !Triangle.ContainsPoint(path, p0.Position, p1.Position, p2.Position)) {
+
+		// 			}
+		// 		}
+
+		// 		fragment.Add(p2);
+
+		// 		p0 = p1;
+		// 		p1 = p2;
+
+		// 		count++;
+		// 	}
+		// }
+
+
+		// private static float GetDirection(ref Vector2 a, ref Vector2 b, ref Vector2 c) {
+		// 	return (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+		// }
+
 		private struct Point {
 			public Vector2 Position;
-			public Vector4 Color;
+			public Color Color;
 
-			public Point(Vector2 position, Vector4 color) {
+			public Point(Vector2 position, Color color) {
 				Position = position;
 				Color = color;
 			}

@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 namespace Quilt.VG {
 	public static class RectangleExtensions {
-		public static IFinishingPathBuilder RoundedRect(this IPathBuilder @this, float x, float y, float w, float h, float r) {
+		public static IFinishingPathBuilder RoundedRectangle(this IPathBuilder @this, float x, float y, float w, float h, float r) {
 			return @this
 				.MoveTo(x + r, y)
 				.LineTo(x + w - r, y) // top

@@ -1,6 +1,6 @@
 ﻿namespace Quilt.VG {
-	public enum CommandType : byte {
-		SetPosition,
+	public enum PathOperationType : byte {
+		Move,
 		SetStrokeColor,
 		SetStrokeWidth,
 		SetStrokeMiter,

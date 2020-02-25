@@ -7,7 +7,7 @@
 	internal class StrokeRenderer : Renderer {
 		private static readonly int __uintSize = Marshal.SizeOf<uint>();
 		private static readonly int __vector2Size = Marshal.SizeOf<Vector2>();
-		private static readonly int __vector4Size = Marshal.SizeOf<Vector4>();
+		private static readonly int __colorSize = Marshal.SizeOf<Color>();
 		private static readonly int __floatSize = Marshal.SizeOf<float>();
 		private static readonly int __pointSize = Marshal.SizeOf<Point>();
 
@@ -38,7 +38,7 @@
 
 			gl.VertexAttribPointer(index++, 2, DataType.Float, false, __pointSize, offset); offset += __vector2Size; // Position
 			gl.VertexAttribPointer(index++, 1, DataType.UnsignedInt, false, __pointSize, offset); offset += __uintSize; // Flags
-			gl.VertexAttribPointer(index++, 4, DataType.Float, false, __pointSize, offset); offset += __vector4Size; // Color
+			gl.VertexAttribPointer(index++, 4, DataType.Float, false, __pointSize, offset); offset += __colorSize; // Color
 			gl.VertexAttribPointer(index++, 1, DataType.Float, false, __pointSize, offset); offset += __floatSize; // Width
 
 			var assembly = typeof(VGContext).Assembly;
@@ -59,7 +59,7 @@
 			_miterLimitUniform = _gl.GetUniformLocation(_program, "_miterLimit");
 		}
 
-		public override void Render(FrameBuilder frame, Matrix4x4 projection, Vector2 viewport, Path path) {
+		public override void Render(IFrameBuilder frame, Matrix4x4 projection, Vector2 viewport, IPath path) {
 			_gl.UseProgram(_program);
 
 			_gl.UniformMatrix(_projectionUniform, 1, false, projection);
@@ -68,10 +68,6 @@
 
 			_gl.BindVertexArray(_pointsVA);
 			_gl.BindBuffer(BufferTarget.Array, _pointsVB);
-
-			var color = frame.StrokeColor;
-			var width = frame.StrokeWidth;
-			var flags = frame.StrokeFlags;
 
 			var pendingExtrapolate = false;
 			var previous = default(Point?);
@@ -82,97 +78,82 @@
 			var mainEnumerator = path.GetEnumerator();
 
 			while (mainEnumerator.MoveNext()) {
-				var command = mainEnumerator.Current;
+				var pathPoint = mainEnumerator.Current;
 
-				switch (command.Type) {
-					case CommandType.SetStrokeColor: {
-						color = command.StrokeColor;
+				if (pendingExtrapolate) {
+					// now that we have two positions,
+					// we have to extrapolate the first point in a path
 
-						break;
-					}
+					var p1 = _points[1];
+					var p2 = ExtrapolatePoint(pathPoint.Position, p1.Position, 10);
 
-					case CommandType.SetStrokeWidth: {
-						width = command.StrokeWidth;
+					_points[0] = new Point(p2, p1.Flags, p1.Color, p1.Width);
 
-						break;
-					}
-
-					case CommandType.SetStrokeFlags: {
-						flags = command.StrokeFlags;
-
-						break;
-					}
-
-					case CommandType.SetPosition: {
-						if (pendingExtrapolate) {
-							// now that we have two positions,
-							// we have to extrapolate the first point in a path
-
-							var p1 = _points[pointCount - 1];
-							var p2 = ExtrapolatePoint(command.Position, p1.Position, 1);
-
-							_points[0] = new Point(p2, p1.Flags, p1.Color, p1.Width);
-
-							pendingExtrapolate = false;
-						}
-
-						if (pointCount == 0) {
-							// First point in batch
-							if (!previous.HasValue) {
-								// If we don't have a previous point, set it to empty for now
-								// and queue a pending extrapolation
-								pendingExtrapolate = true;
-
-								previous = default(Point);
-							}
-
-							// frist point in a batch is an adjacency point, either the previous one,
-							// or a yet to be extrapolated one
-							_points[pointCount++] = previous.Value;
-						}
-
-						previous = _points[pointCount++] = new Point(command.Position, flags, color, width);
-
-						if (pointCount == _points.Length - 1) {
-							// Here we have to determine whether the final point in this batch
-							// is the final point overall, if it is we have to extrapolate an adjacency
-							// point from this point and the previous one.
-							// We take a copy of mainEnumerator here to enumerate forward for
-							// the next point without affecting the mainEnumerator
-							// (it is a struct to achieve that).
-
-							var enumerator = mainEnumerator;
-							var next = default(Point?);
-
-							while (enumerator.MoveNext()) {
-								var c = enumerator.Current;
-
-								if (c.Type == CommandType.SetPosition) {
-									var current = _points[pointCount];
-
-									next = new Point(c.Position, current.Flags, current.Color, current.Width);
-								}
-							}
-
-							if (!next.HasValue) {
-								// A next point wasn't found, so we extrapolate one from the current point
-								// and the previous one
-
-								var p0 = _points[pointCount - 1];
-								var p2 = ExtrapolatePoint(p0.Position, command.Position, 1);
-
-								next = new Point(p2, flags, color, width);
-							}
-
-							_points[pointCount++] = next.Value;
-						}
-
-						tail1 = tail2;
-						tail2 = previous.Value;
-
-						break;
-					}
+					pendingExtrapolate = false;
 				}
+
+				if (pointCount == 0) {
+					// First point in batch
+					if (!previous.HasValue) {
+						// If we don't have a previous point
+						// this is the first point of the path
+
+						if (false) {
+							// first and last points are coincident
+						} else {
+							// Otherwise, we queue up a pending extrapolation
+							// This means we'll extend the imaginary line created
+							// by the the first two points and create an adjacency point
+							// offset by 1
+							pendingExtrapolate = true;
+
+							previous = default(Point);
+						}
+					} else {
+						_points[pointCount++] = tail1;
+					}
+
+					// first point in a batch is an adjacency point, either the previous one,
+					// or a yet to be extrapolated one
+					_points[pointCount++] = previous.Value;
+				}
+
+				previous = _points[pointCount++] = new Point(pathPoint.Position, pathPoint.StrokeFlags, pathPoint.StrokeColor, pathPoint.StrokeWidth);
+
+				if (pointCount == _points.Length - 1) {
+					// Here we have to determine whether the final point in this batch
+					// is the final point overall, if it is we have to extrapolate an adjacency
+					// point from this point and the previous one.
+					// We take a copy of mainEnumerator here to enumerate forward for
+					// the next point without affecting the mainEnumerator
+					// (it is a struct to achieve that).
+
+					var enumerator = mainEnumerator;
+					var next = default(Point?);
+
+					while (enumerator.MoveNext()) {
+						var c = enumerator.Current;
+
+						var current = _points[pointCount];
+
+						next = new Point(c.Position, current.Flags, current.Color, current.Width);
+					}
+
+					if (!next.HasValue) {
+						// A next point wasn't found, so we extrapolate one from the current point
+						// and the previous one
+
+						var p0 = _points[pointCount - 1];
+						var p2 = ExtrapolatePoint(p0.Position, pathPoint.Position, 10);
+
+						next = new Point(p2, pathPoint.StrokeFlags, pathPoint.StrokeColor, pathPoint.StrokeWidth);
+					}
+
+					_points[pointCount++] = next.Value;
+				}
+
+				tail1 = tail2;
+				tail2 = previous.Value;
 
 				if (pointCount == _points.Length) {
 					FlushBuffer();
@@ -182,7 +163,7 @@
 			}
 
 			if (pointCount > 0) {
-				var p2 = ExtrapolatePoint(tail1.Position, tail2.Position, 1);
+				var p2 = ExtrapolatePoint(tail1.Position, tail2.Position, 10);
 
 				_points[pointCount++] = new Point(p2, tail2.Flags, tail2.Color, tail2.Width);
 
@@ -191,7 +172,7 @@
 
 			void FlushBuffer() {
 #if DEBUG
-				Console.WriteLine("Flushing buffer...");
+				Console.WriteLine("Flushing stroke buffer...");
 
 				for (int i = 0; i < pointCount; i++) {
 					var p = _points[i];
@@ -209,10 +190,10 @@
 		private struct Point {
 			public Vector2 Position;
 			public StrokeFlags Flags;
-			public Vector4 Color;
+			public Color Color;
 			public float Width;
 
-			public Point(Vector2 position, StrokeFlags flags, Vector4 color, float width) {
+			public Point(Vector2 position, StrokeFlags flags, Color color, float width) {
 				Position = position;
 				Flags = flags;
 				Color = color;

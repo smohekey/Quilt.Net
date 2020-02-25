@@ -1,17 +1,17 @@
 ﻿namespace Quilt.VG {
-  using System.Numerics;
-  using System.Runtime.InteropServices;
+	using System.Numerics;
+	using System.Runtime.InteropServices;
 
 	[StructLayout(LayoutKind.Explicit)]
-	public struct Command {
+	public struct PathOperation {
 		[FieldOffset(0)]
-		public CommandType Type;
+		public PathOperationType Type;
 
 		[FieldOffset(4)]
 		public Vector2 Position;
 
 		[FieldOffset(4)]
-		public Vector4 StrokeColor;
+		public Color StrokeColor;
 
 		[FieldOffset(4)]
 		public float StrokeWidth;
@@ -23,6 +23,6 @@
 		public StrokeFlags StrokeFlags;
 
 		[FieldOffset(4)]
-		public Vector4 FillColor;
+		public Color FillColor;
 	}
 }

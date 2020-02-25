@@ -1,14 +1,12 @@
 ﻿namespace Quilt.VG {
-	using System.Numerics;
-
 	public interface IFrameBuilder {
-		Vector4 StrokeColor { get; set; }
+		Color StrokeColor { get; set; }
 		float StrokeWidth { get; set; }
 		float StrokeMiter { get; set; }
 		StrokeFlags StrokeFlags { get; set; }
-		Vector4 FillColor { get; set; }
+		Color FillColor { get; set; }
 
-		IFrameBuilder SetStrokeColor(Vector4 strokeColor);
+		IFrameBuilder SetStrokeColor(Color strokeColor);
 
 		IFrameBuilder SetStrokeWidth(float strokeWidth);
 
@@ -16,10 +14,10 @@
 
 		IFrameBuilder SetStrokeFlags(StrokeFlags strokeFlags);
 
-		IFrameBuilder SetFillColor(Vector4 fillColor);
+		IFrameBuilder SetFillColor(Color fillColor);
 
-		IPathBuilder CreatePath(bool closed = true);
-		IFrameBuilder StrokePath(IPathBuilder path);
-		IFrameBuilder FillPath(IPathBuilder path);
+		IPathBuilder CreatePath();
+		IFrameBuilder StrokePath(IPath path);
+		IFrameBuilder FillPath(IPath path);
 	}
 }

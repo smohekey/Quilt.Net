@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.IO;
+using System.Security.Cryptography;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 namespace Quilt.UI {
 	using System.ComponentModel;
@@ -9,6 +11,7 @@ namespace Quilt.UI {
 	using System.Runtime.InteropServices;
 	using System.Numerics;
 	using Quilt.VG;
+	using Quilt.Typography;
 
 	[QuiltElement(Namespace.URI)]
 	public class Window : IEquatable<Window> {
@@ -63,6 +66,12 @@ namespace Quilt.UI {
 			gl.BlendFunc(BlendFactor.SourceAlpha, BlendFactor.OneMinusSourceAlpha);
 
 			_vg = new VGContext(gl);
+
+			var fontLibrary = new FontLibrary();
+
+			fontLibrary.LoadPlatformDirectories();
+
+
 		}
 
 		public Window() : this(Application.Instance) {
@@ -144,31 +153,103 @@ namespace Quilt.UI {
 			}
 
 			_vg.BeginFrame(width, height)
-				.SetStrokeWidth(20f)
-				.SetStrokeColor(new Vector4(0f, 0f, 0f, 1f))
 				.CreatePath()
-					.MoveTo(100, 100)
-					.LineTo(200, 100)
-					.LineTo(200, 200)
-					.LineTo(100, 200)
-					.Stroke()
-					.Finish()
-				.CreatePath()
-					.SetFillColor(new Vector4(0.5f, 0.5f, 0f, 1f))
-					.SetStrokeColor(new Vector4(1f, 1f, 1f, 1f))
+					.SetStrokeColor(Color.Black)
 					.SetStrokeWidth(5)
-					.MoveTo(300, 100)
-					.ArcTo(300, 300, 100, true)
+					.MoveTo(100, 100)
+					.SetFillColor(Color.White)
+					.LineTo(300, 100)
+					.SetFillColor(Color.Red)
+					.LineTo(300, 150)
+					.SetFillColor(Color.Green)
+					.LineTo(150, 150)
+					.SetFillColor(Color.Blue)
+					.LineTo(150, 250)
+					.SetFillColor(Color.Purple)
+					.LineTo(300, 250)
+					.SetFillColor(Color.DarkGoldenrod)
+					.LineTo(300, 300)
+					.SetFillColor(Color.Yellow)
+					.LineTo(100, 300)
+					.SetFillColor(Color.White)
+					.LineTo(100, 100)
+					.Build()
 					.Fill()
 					.Stroke()
 					.Finish()
-				.CreatePath()
-					.SetFillColor(new Vector4(0f, 0.5f, 0.5f, 1f))
-					.SetStrokeColor(new Vector4(0f, 0f, 0f, 1f))
-					.SetStrokeWidth(2f)
-					.Rectangle(100, 300, 100, 100)
-					.Fill()
-					.Stroke();
+
+			// .CreatePath()
+			// 	.SetFillColor(Color.LightGray)
+			// 	.SetStrokeColor(Color.White)
+			// 	.SetStrokeWidth(5)
+			// 	.MoveTo(300, 100)
+			// 	.ArcTo(300, 300, 100, true)
+			// 	.Fill()
+			// 	.Stroke()
+			// 	.Finish()
+			// .CreatePath()
+			// 	.SetFillColor(Color.LightSkyBlue)
+			// 	.SetStrokeColor(Color.White)
+			// 	.SetStrokeWidth(5)
+			// 	.MoveTo(100, 100)
+			// 	.ArcTo(300, 100, 100, true)
+			// 	.Fill()
+			// 	.Stroke()
+			// 	.Finish()
+			// .CreatePath()
+			// 	.SetFillColor(Color.LightGoldenrodYellow)
+			// 	.SetStrokeColor(Color.White)
+			// 	.SetStrokeWidth(5)
+			// 	.MoveTo(100, 300)
+			// 	.ArcTo(100, 100, 100, true)
+			// 	.Fill()
+			// 	.Stroke()
+			// 	.Finish()
+			// .CreatePath()
+			// 	.SetFillColor(Color.LightPink)
+			// 	.SetStrokeColor(Color.White)
+			// 	.SetStrokeWidth(5)
+			// 	.MoveTo(100, 300)
+			// 	.ArcTo(300, 300, 100, false)
+			// 	.Fill()
+			// 	.Stroke()
+			// 	.Finish()
+
+			// .CreatePath()
+			// 	.SetFillColor(Color.Blue)
+			// 	.SetStrokeColor(Color.Black)
+			// 	.SetStrokeWidth(5)
+			// 	.RoundedRectangle(10, 10, 380, 380, 50)
+			// 	.Fill()
+			// 	.Stroke()
+			// 	.Finish()
+
+			// .CreatePath()
+			// 	.SetFillColor(Color.LimeGreen)
+			// 	.SetStrokeColor(Color.Black)
+			// 	.SetStrokeWidth(5)
+			// 	.MoveTo(100, 100)
+			// 	.ArcTo(400, 400, 300, true)
+			// 	.Fill()
+			// 	.Stroke()
+			// 	.Finish()
+
+			// .CreatePath()
+			// 	.SetFillColor(Color.MediumSeaGreen)
+			// 	.SetStrokeColor(Color.Black)
+			// 	.SetStrokeWidth(2f)
+			// 	.Rectangle(100, 300, 100, 100)
+			// 	.Fill()
+			// 	.Stroke()
+			// 	.Finish()
+
+			// .CreatePath()
+			// 	.SetStrokeColor(Color.DarkGray)
+			// 	.SetStrokeWidth(3)
+			// 	.MoveTo(10, 10)
+			// 	.LineTo(10, 50)
+			// 	.Stroke()
+			;
 
 
 			window.SwapBuffers();

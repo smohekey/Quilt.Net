@@ -1,7 +1,9 @@
-namespace Quilt.Typography.SFNT {
-	public enum PlatformID {
+﻿namespace Quilt.Typography.SFNT {
+	public enum PlatformID : ushort {
 		Unicode = 0,
 		Macintosh = 1,
-		Microsoft = 3
+		ISO = 2,
+		Microsoft = 3,
+		Custom = 4
 	}
 }

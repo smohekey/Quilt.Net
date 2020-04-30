@@ -1,27 +1,53 @@
 ﻿namespace Quilt.Typography {
-	using System;
-	using System.Diagnostics.CodeAnalysis;
+  using System;
+  using System.Collections;
+	using System.Collections.Generic;
 	using System.IO;
 	using Quilt.Typography.SFNT;
 
-	public abstract class Font {
-		protected readonly FileInfo _file;
+	public abstract class Font : IEnumerable<Glyph> {
+		protected readonly Func<Stream> _openStream;
 
-		protected Font(FileInfo file) {
-			_file = file;
+		protected Font(Func<Stream> openStream) {
+			_openStream = openStream;
 		}
 
-		internal static bool TryLoad(FileInfo file, [NotNullWhen(true)] out Font? font) {
-			using var stream = file.OpenRead();
-			using var reader = BitConverter.IsLittleEndian ? new BigEndianBinaryReader(stream) : new BinaryReader(stream);
+		public abstract int Ascender { get; }
+		public abstract int Descender { get; }
+		public abstract int UnitsPerEM { get; }
 
-			if (SFNTFont.TryLoad(file, reader, out font)) {
-				return true;
+		public abstract uint GetGlyphIndex(char codePoint);
+		public abstract Glyph GetGlyph(uint index);
+		public Glyph GetGlyph(char codePoint) {
+			return GetGlyph(GetGlyphIndex(codePoint));
+		}
+
+		public static Font? Load(FileInfo file) {
+			using var stream = file.OpenRead();
+
+			return Load(() => file.OpenRead());
+		}
+
+		public static Font? Load(byte[] buffer) {
+			return Load(() => new MemoryStream(buffer));
+		}
+
+		public static Font? Load(Func<Stream> openStream) {
+			if (SFNTFont.Load(openStream) is Font font) {
+				return font;
 			}
 
-			font = null;
+			return null;
+		}
 
-			return false;
+		internal Stream OpenStream() {
+			return _openStream();
+		}
+
+		public abstract IEnumerator<Glyph> GetEnumerator();
+
+		IEnumerator IEnumerable.GetEnumerator() {
+			return GetEnumerator();
 		}
 	}
 }

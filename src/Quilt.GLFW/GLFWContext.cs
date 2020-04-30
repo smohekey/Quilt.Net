@@ -41,12 +41,12 @@
 		protected GLFWContext(UnmanagedLibrary library) : base(library) {
 			Init();
 
-			WindowHint(Hint.ContextVersionMajor, 4);
-			WindowHint(Hint.ContextVersionMinor, 3);
+			WindowHint(Hint.ContextVersionMajor, 3);
+			WindowHint(Hint.ContextVersionMinor, 2);
 			WindowHint(Hint.OpenglProfile, (int)Profile.Core);
 			WindowHint(Hint.OpenglDebugContext, true);
-			//WindowHint(Hint.OpenglForwardCompatible, true);
-
+			WindowHint(Hint.OpenglForwardCompatible, true);
+			
 			SetErrorCallback(_errorDelegate = new ErrorCallback(HandleError));
 			SetMonitorCallback(_monitorDelegate = new MonitorCallback(HandleMonitor));
 

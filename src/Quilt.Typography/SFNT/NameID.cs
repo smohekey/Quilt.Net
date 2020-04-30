@@ -1,0 +1,30 @@
+﻿namespace Quilt.Typography.SFNT {
+	public enum NameID : ushort {
+		CopyrightNotice = 0,
+		FontFamily = 1,
+		FontSubfamily = 2,
+		UniqueSubfamily = 3,
+		FullName = 4,
+		Version = 5,
+		PostScriptName = 6,
+		TrademarkNotice = 7,
+		Manufacturer = 8,
+		Designer = 9,
+		Description = 10,
+		VendorURL = 11,
+		DesignerURL = 12,
+		License = 13,
+		LicenseURL = 14,
+		Reserved = 15,
+		PreferredFamily = 16,
+		PreferredSubfamily = 17,
+		CompatibleFull = 18,
+		SampleText = 19,
+		PostScriptCID = 20,
+		WWSFamily = 21,
+		WWSSubfamily = 22,
+		LightBackgroundPalette = 23,
+		DarkBackgroundPalette = 24,
+		VariationsPostScriptName = 25
+	}
+}

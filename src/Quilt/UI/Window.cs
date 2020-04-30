@@ -1,19 +1,16 @@
-﻿using System.IO;
-using System.Security.Cryptography;
-using System.ComponentModel.DataAnnotations;
-using System.Reflection;
-namespace Quilt.UI {
-	using System.ComponentModel;
+﻿namespace Quilt.UI {
 	using System.Threading;
 	using System;
 	using Quilt.GLFW;
 	using Quilt.GL;
-	using System.Runtime.InteropServices;
-	using System.Numerics;
 	using Quilt.VG;
 	using Quilt.Typography;
+	using System.Linq;
+  using System.Text;
+  using System.Numerics;
+  using Quilt.Typography.Win32;
 
-	[QuiltElement(Namespace.URI)]
+  [QuiltElement(Namespace.URI)]
 	public class Window : IEquatable<Window> {
 		private static int __nextId = 0;
 
@@ -22,11 +19,7 @@ namespace Quilt.UI {
 		private readonly GLFWWindow _window;
 		private readonly int _id;
 
-
-		private readonly VGContext _vg;
-
-		private int _fbWidth;
-		private int _fbHeight;
+		private readonly Surface _vgSurface;
 
 		private bool _fill = true;
 
@@ -39,6 +32,9 @@ namespace Quilt.UI {
 			glfw.WindowHint(Hint.Resizable, true);
 
 			_window = glfw.CreateWindow(100, 100, "Quilt");
+
+			glfw.SwapInterval(1);
+
 			_id = Interlocked.Increment(ref __nextId);
 
 			Application._windows.Add(this);
@@ -65,13 +61,11 @@ namespace Quilt.UI {
 			gl.Enable(Capability.Blend);
 			gl.BlendFunc(BlendFactor.SourceAlpha, BlendFactor.OneMinusSourceAlpha);
 
-			_vg = new VGContext(gl);
-
 			var fontLibrary = new FontLibrary();
 
-			fontLibrary.LoadPlatformDirectories();
+			//(_font, _fontHeight) = Helper.GetSystemFont();
 
-
+			_vgSurface = new Surface(gl);
 		}
 
 		public Window() : this(Application.Instance) {
@@ -130,8 +124,11 @@ namespace Quilt.UI {
 
 		#region GLFWWindow.OnWindowContentScale Event
 		public event Action<Window, float, float>? OnContentScaled;
-		private void HandleWindowContentScale(GLFWWindow window, float xscale, float yscale) {
-			OnContentScaled?.Invoke(this, xscale, yscale);
+		private void HandleWindowContentScale(GLFWWindow window, float xScale, float yScale) {
+			//_xScale = xScale;
+			//_yScale = yScale;
+
+			OnContentScaled?.Invoke(this, xScale, yScale);
 		}
 		#endregion
 
@@ -152,105 +149,41 @@ namespace Quilt.UI {
 				gl.PolygonMode(FaceSelection.FrontAndBack, PolygonMode.Line);
 			}
 
-			_vg.BeginFrame(width, height)
-				.CreatePath()
-					.SetStrokeColor(Color.Black)
-					.SetStrokeWidth(5)
-					.MoveTo(100, 100)
-					.SetFillColor(Color.White)
-					.LineTo(300, 100)
-					.SetFillColor(Color.Red)
-					.LineTo(300, 150)
-					.SetFillColor(Color.Green)
-					.LineTo(150, 150)
-					.SetFillColor(Color.Blue)
-					.LineTo(150, 250)
-					.SetFillColor(Color.Purple)
-					.LineTo(300, 250)
-					.SetFillColor(Color.DarkGoldenrod)
-					.LineTo(300, 300)
-					.SetFillColor(Color.Yellow)
-					.LineTo(100, 300)
-					.SetFillColor(Color.White)
-					.LineTo(100, 100)
-					.Build()
-					.Fill()
-					.Stroke()
-					.Finish()
+			window.GetContentScale(out var xScale, out var yScale);
 
-			// .CreatePath()
-			// 	.SetFillColor(Color.LightGray)
-			// 	.SetStrokeColor(Color.White)
-			// 	.SetStrokeWidth(5)
-			// 	.MoveTo(300, 100)
-			// 	.ArcTo(300, 300, 100, true)
-			// 	.Fill()
-			// 	.Stroke()
-			// 	.Finish()
-			// .CreatePath()
-			// 	.SetFillColor(Color.LightSkyBlue)
-			// 	.SetStrokeColor(Color.White)
-			// 	.SetStrokeWidth(5)
-			// 	.MoveTo(100, 100)
-			// 	.ArcTo(300, 100, 100, true)
-			// 	.Fill()
-			// 	.Stroke()
-			// 	.Finish()
-			// .CreatePath()
-			// 	.SetFillColor(Color.LightGoldenrodYellow)
-			// 	.SetStrokeColor(Color.White)
-			// 	.SetStrokeWidth(5)
-			// 	.MoveTo(100, 300)
-			// 	.ArcTo(100, 100, 100, true)
-			// 	.Fill()
-			// 	.Stroke()
-			// 	.Finish()
-			// .CreatePath()
-			// 	.SetFillColor(Color.LightPink)
-			// 	.SetStrokeColor(Color.White)
-			// 	.SetStrokeWidth(5)
-			// 	.MoveTo(100, 300)
-			// 	.ArcTo(300, 300, 100, false)
-			// 	.Fill()
-			// 	.Stroke()
-			// 	.Finish()
+			var vg = _vgSurface.Begin(width, height, xScale, yScale);
 
-			// .CreatePath()
-			// 	.SetFillColor(Color.Blue)
-			// 	.SetStrokeColor(Color.Black)
-			// 	.SetStrokeWidth(5)
-			// 	.RoundedRectangle(10, 10, 380, 380, 50)
-			// 	.Fill()
-			// 	.Stroke()
-			// 	.Finish()
+			//frame.Transform(Matrix3x2.CreateScale(ppu));
 
-			// .CreatePath()
-			// 	.SetFillColor(Color.LimeGreen)
-			// 	.SetStrokeColor(Color.Black)
-			// 	.SetStrokeWidth(5)
-			// 	.MoveTo(100, 100)
-			// 	.ArcTo(400, 400, 300, true)
-			// 	.Fill()
-			// 	.Stroke()
-			// 	.Finish()
-
-			// .CreatePath()
-			// 	.SetFillColor(Color.MediumSeaGreen)
-			// 	.SetStrokeColor(Color.Black)
-			// 	.SetStrokeWidth(2f)
-			// 	.Rectangle(100, 300, 100, 100)
-			// 	.Fill()
-			// 	.Stroke()
-			// 	.Finish()
-
-			// .CreatePath()
-			// 	.SetStrokeColor(Color.DarkGray)
-			// 	.SetStrokeWidth(3)
-			// 	.MoveTo(10, 10)
-			// 	.LineTo(10, 50)
-			// 	.Stroke()
+			var path = _vgSurface.CreatePath()
+			//	.MoveTo(300, 300)
+			//	.BezierTo(600, 300, 600, 600, 300, 600)
+			//	.Close()
+				.Build()
 			;
 
+			vg.FontSize(10);
+
+			const string message = "Why, hello world!";
+
+			var (w, h) = vg.TextExtents(message);
+
+			var rect = _vgSurface.CreatePath()
+				.RoundedRectangle(100, 100, w + 20, h + 20, 10)
+				.Build();
+
+
+			vg.FillColor(Color.White);
+			//vg.Fill(path);
+			vg.StrokeColor(Color.White);
+			vg.StrokeWidth(20);
+			vg.Stroke(path);
+
+			vg.FillColor(Color.DarkGray);
+			vg.Fill(rect);
+
+			vg.FillColor(Color.Black);
+			vg.Text(110, 110, message);
 
 			window.SwapBuffers();
 		}
@@ -330,9 +263,6 @@ namespace Quilt.UI {
 
 		#region GLFWWindow.FramebufferSize
 		private void HandleFramebufferSize(GLFWWindow window, int width, int height) {
-			_fbWidth = width;
-			_fbHeight = height;
-
 			var gl = window.GetGLContext();
 
 			gl.Viewport(0, 0, width, height);

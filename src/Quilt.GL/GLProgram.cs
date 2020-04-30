@@ -78,7 +78,7 @@
 		protected abstract void DeleteProgram(uint program);
 
 		protected override void DisposeUnmanaged() {
-			DeleteProgram(_handle);
+			//DeleteProgram(_handle);
 		}
 	}
 }

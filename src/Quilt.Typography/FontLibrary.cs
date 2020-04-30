@@ -1,11 +1,15 @@
-namespace Quilt.Typography {
+﻿namespace Quilt.Typography {
 	using System;
 	using System.Collections;
 	using System.Collections.Generic;
 	using System.IO;
-	using System.Runtime.InteropServices;
+  using System.Linq;
+  using System.Runtime.InteropServices;
+  using System.Text.RegularExpressions;
 
-	public class FontLibrary : IEnumerable<Font> {
+  public class FontLibrary : IEnumerable<Font> {
+		private static readonly Regex __windowsRegex = new Regex("%([a-zA-Z][a-zA-Z0-9]*)%", RegexOptions.Compiled);
+
 		private static readonly string[] __linuxDirectories = new[] {
 			"~/.fonts",
 			"/usr/local/share/fonts",
@@ -35,9 +39,7 @@ namespace Quilt.Typography {
 			}
 
 			foreach (var file in directory.EnumerateFiles(SearchOption.AllDirectories, "*.ttf", "*.otf")) {
-				if (Font.TryLoad(file, out var font)) {
-					_fonts.Add(file.FullName, font);
-				}
+				LoadFont(file);
 			}
 		}
 
@@ -49,6 +51,20 @@ namespace Quilt.Typography {
 					LoadDirectory(directory);
 				}
 			}
+		}
+
+		public Font? LoadFont(string path) {
+			return LoadFont(new FileInfo(path));
+		}
+
+		private Font? LoadFont(FileInfo file) {
+			if (Font.Load(file) is Font font) {
+				_fonts.Add(file.FullName, font);
+
+				return font;
+			}
+
+			return null;
 		}
 
 		public IEnumerator<Font> GetEnumerator() {
@@ -63,12 +79,18 @@ namespace Quilt.Typography {
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 				return __linuxDirectories;
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-				return __windowsDirectories;
+				return __windowsDirectories.Select(s => ExpandEnvVars(__windowsRegex, s));
 			} else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 				return __osxDirectories;
 			} else {
 				return Array.Empty<string>();
 			}
+		}
+
+		private static string ExpandEnvVars(Regex regex, string path) {
+			return regex.Replace(path, new MatchEvaluator(m => {
+				return Environment.GetEnvironmentVariable(m.Groups[1].Value);
+			}));
 		}
 	}
 }

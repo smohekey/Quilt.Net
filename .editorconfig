@@ -145,6 +145,9 @@ csharp_space_after_dot = false
 csharp_preserve_single_line_statements = true
 csharp_preserve_single_line_blocks = true
 
+dotnet_diagnostic.CA1000.severity = none
+dotnet_diagnostic.CA1034.severity = none
+
 ##################################
 # Visual Basic Code Style Rules  #
 ##################################

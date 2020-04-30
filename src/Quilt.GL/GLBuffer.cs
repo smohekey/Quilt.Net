@@ -1,6 +1,5 @@
 ﻿namespace Quilt.GL {
 	using System.Runtime.InteropServices;
-	using Quilt.GL.Unmanaged;
 	using Quilt.Unmanaged;
 
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "gl")]

@@ -1,12 +1,9 @@
-#version 430
-layout (location = 0) in vec2 _position;
-layout (location = 1) in vec4 _color;
+#version 330
 
-uniform mat4 _projection;
+layout (location = 0) in vec2 position;
 
-out vec4 color;
+uniform mat4 _mvp;
 
 void main() {
-	color = _color;
-	gl_Position = _projection * vec4(_position.xy, 0.0, 1.0);
+	gl_Position = _mvp * vec4(position.xy, 0.0, 1.0);
 }

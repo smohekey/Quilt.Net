@@ -1,16 +1,13 @@
-#version 430
+#version 330
 
 layout (lines_adjacency) in;
 layout (triangle_strip, max_vertices = 7) out;
 
 uniform vec2 _viewport;
+uniform vec4 _color;
+uniform int _flags;
+uniform float _width;
 uniform float _miterLimit;
-
-in VS_OUT {
-	uint flags;
-    vec4 color;
-	float width;
-} gs_in[];
 
 out vec4 color;
 
@@ -39,38 +36,38 @@ void main() {
 	float bn1 = dot(miter_b, n2);
 	if (an1==0) an1 = 1;
 	if (bn1==0) bn1 = 1;
-	float length_a = gs_in[1].width / an1 / 2;
-	float length_b = gs_in[2].width / bn1 / 2;
+	float length_a = _width / an1 / 2;
+	float length_b = _width / bn1 / 2;
 
-	if( dot( v0, v1 ) < -_miterLimit ) {
+	if (dot(v0, v1) < -_miterLimit) {
         miter_a = n1;
-        length_a = gs_in[1].width;
+        length_a = _width;
 
-        /* close the gap */
-        if( dot( v0, n1 ) > 0 ) {
-			color = gs_in[1].color;
-            gl_Position = vec4((p1 + gs_in[1].width * n0) / _viewport, 0, 1.0);
+        // close the gap 
+        if (dot(v0, n1) > 0) {
+			color = _color;
+            gl_Position = vec4((p1 + _width * n0) / _viewport, 0, 1.0);
 			EmitVertex();
 
-			color = gs_in[1].color;
-            gl_Position = vec4((p1 + gs_in[1].width * n1) / _viewport, 0, 1.0);
+			color = _color;
+            gl_Position = vec4((p1 + _width * n1) / _viewport, 0, 1.0);
             EmitVertex();
 
-			color = gs_in[1].color;
+			color = _color;
             gl_Position = vec4(p1 / _viewport, 0, 1.0);
             EmitVertex();
 
             EndPrimitive();
         } else {
-			color = gs_in[1].color;
-            gl_Position = vec4((p1 - gs_in[1].width * n1) / _viewport, 0, 1.0 );
+			color = _color;
+            gl_Position = vec4((p1 - _width * n1) / _viewport, 0, 1.0);
             EmitVertex();
 
-            color = gs_in[1].color;
-            gl_Position = vec4((p1 - gs_in[1].width * n0) / _viewport, 0, 1.0 );
+            color = _color;
+            gl_Position = vec4((p1 - _width * n0) / _viewport, 0, 1.0);
             EmitVertex();
 
-			color = gs_in[1].color;
+			color = _color;
             gl_Position = vec4(p1 / _viewport, 0, 1.0);
             EmitVertex();
 
@@ -78,26 +75,26 @@ void main() {
         }
     }
 
-    if(dot(v1, v2) < -_miterLimit) {
+    if (dot(v1, v2) < -_miterLimit) {
         miter_b = n1;
-        length_b = gs_in[2].width;
+        length_b = _width;
     }
 
     // generate the triangle strip
-    color = gs_in[1].color;;
-    gl_Position = vec4((p1 + length_a * miter_a) / _viewport, 0, 1.0 );
+    color = _color;
+    gl_Position = vec4((p1 + length_a * miter_a) / _viewport, 0, 1.0);
     EmitVertex();
 
-    color = gs_in[1].color;
-    gl_Position = vec4((p1 - length_a * miter_a) / _viewport, 0, 1.0 );
+    color = _color;
+    gl_Position = vec4((p1 - length_a * miter_a) / _viewport, 0, 1.0);
     EmitVertex();
 
-    color = gs_in[2].color;
-    gl_Position = vec4((p2 + length_b * miter_b) / _viewport, 0, 1.0 );
+    color = _color;
+    gl_Position = vec4((p2 + length_b * miter_b) / _viewport, 0, 1.0);
     EmitVertex();
 
-    color = gs_in[2].color;
-    gl_Position = vec4((p2 - length_b * miter_b) / _viewport, 0, 1.0 );
+    color = _color;
+    gl_Position = vec4((p2 - length_b * miter_b) / _viewport, 0, 1.0);
     EmitVertex();
 
     EndPrimitive();

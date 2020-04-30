@@ -10,7 +10,7 @@
 			_gl = gl;
 		}
 
-		public abstract void Render(IFrameBuilder frame, Matrix4x4 projection, Vector2 viewport, IPath path);
+		public abstract void Render(ref Context context, Matrix4x4 mvp, Vector2 viewport, Path path);
 
 		protected Vector2 ExtrapolatePoint(Vector2 p0, Vector2 p1, float d) {
 			float length = MathF.Sqrt(MathF.Pow(p1.X - p0.X, 2) + MathF.Pow(p1.Y - p0.Y, 2));

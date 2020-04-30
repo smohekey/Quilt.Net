@@ -8,15 +8,14 @@
 	using Quilt.UI;
 
 	public class Application {
-		private static readonly Lazy<Application> __instance = new Lazy<Application>(() => new Application());
-		internal static Application Instance => __instance.Value;
+		private static readonly Lazy<Application> __lazyInstance = new Lazy<Application>(() => new Application());
+		internal static Application Instance => __lazyInstance.Value;
 
 		internal readonly GLFWContext _glfw;
 		internal readonly HashSet<Window> _windows;
 
 		private Application() {
 			_glfw = GLFWContext.Create();
-			_glfw.SwapInterval(1);
 			_glfw.WindowHint(Hint.Samples, 4);
 
 			_windows = new HashSet<Window>();

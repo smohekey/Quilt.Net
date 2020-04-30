@@ -1,6 +1,6 @@
-namespace Quilt.Typography.SFNT {
+﻿namespace Quilt.Typography.SFNT {
 	public struct Fixed {
-		public ushort Whole;
-		public ushort Decimal;
+		public ushort High;
+		public ushort Low;
 	}
 }

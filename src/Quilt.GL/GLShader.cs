@@ -95,7 +95,7 @@
 		protected abstract void DeleteShader(uint shader);
 
 		protected override void DisposeUnmanaged() {
-			DeleteShader(_handle);
+			//DeleteShader(_handle);
 		}
 	}
 }

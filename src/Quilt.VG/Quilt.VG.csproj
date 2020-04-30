@@ -3,32 +3,47 @@
   <ItemGroup>
     <ProjectReference Include="..\Quilt.GLFW\Quilt.GLFW.csproj" />
     <ProjectReference Include="..\Quilt.GL\Quilt.GL.csproj" />
+    <ProjectReference Include="..\Quilt.Mac\Quilt.Mac.csproj" />
+    <ProjectReference Include="..\Quilt.Typography\Quilt.Typography.csproj" />
     <ProjectReference Include="..\Quilt.Unmanaged\Quilt.Unmanaged.csproj" />
     <ProjectReference Include="..\Quilt.Collections\Quilt.Collections.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 
   <ItemGroup>
+    <None Remove="Fonts\trim.ttf" />
     <None Remove="Shaders/Stroke.vert" />
 		<None Remove="Shaders/Stroke.geom" />
     <None Remove="Shaders/Stroke.frag" />
     <None Remove="Shaders/Fill.frag" />
-    <None Remove="Shaders/Fill.geom" />
     <None Remove="Shaders/Fill.vert" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Fonts\trim.ttf" />
     <EmbeddedResource Include="Shaders/Stroke.vert" />
 		<EmbeddedResource Include="Shaders/Stroke.geom" />
     <EmbeddedResource Include="Shaders/Stroke.frag" />
     <EmbeddedResource Include="Shaders/Fill.frag" />
-    <EmbeddedResource Include="Shaders/Fill.geom" />
     <EmbeddedResource Include="Shaders/Fill.vert" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="OSX\" />
+    <Folder Include="Windows\" />
   </ItemGroup>
 </Project>

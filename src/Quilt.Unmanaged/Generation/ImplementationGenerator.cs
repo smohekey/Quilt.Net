@@ -1,13 +1,13 @@
 ﻿namespace Quilt.Unmanaged.Generation {
 	using System;
 	using System.Collections.Generic;
-	using System.Diagnostics.CodeAnalysis;
 	using System.Linq;
 	using System.Reflection;
 	using System.Reflection.Emit;
 	using System.Runtime.InteropServices;
 	using System.Security;
-	using Sigil.NonGeneric;
+  using Quilt.Utilities;
+  using Sigil.NonGeneric;
 
 	class ImplementationGenerator {
 		public Type Generate<T>(UnmanagedLibrary library) {
@@ -69,11 +69,8 @@
 				_library = library;
 				_type = type;
 
-				var buffer = new byte[16];
+				var assemblyName = _type.Assembly.GetName().GenerateRandomVariant();
 
-				__random.NextBytes(buffer);
-
-				var assemblyName = new AssemblyName($"{_type.Assembly.GetName().Name}.x{BitConverter.ToString(buffer).Replace("-", "")}");
 				_assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 				_moduleBuilder = _assemblyBuilder.DefineDynamicModule(assemblyName.Name!);
 			}
@@ -89,11 +86,7 @@
 					throw new ArgumentException($"Type '{_type.Name}' must have the {nameof(UnmanagedObjectAttribute)}");
 				}
 
-				var buffer = new byte[16];
-
-				__random.NextBytes(buffer);
-
-				var typeBuilder = _moduleBuilder.DefineType($"{_type.Namespace}.x{BitConverter.ToString(buffer).Replace("-", "")}.{_type.Name}", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.Class, _type);
+				var typeBuilder = _moduleBuilder.DefineConcreteType(_type);
 
 				GenerateConstructors(typeBuilder);
 

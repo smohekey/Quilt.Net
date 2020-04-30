@@ -7,8 +7,8 @@
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "glfw")]
 	public abstract class GLFWWindow : UnmanagedObject {
 		private readonly GLFWContext _glfw;
-		private readonly GLContext _gl;
 		private readonly IntPtr _window;
+		private readonly GLContext _gl;
 		private string _title;
 
 
@@ -130,6 +130,12 @@
 
 		public void Close() {
 			HideWindow(_window);
+		}
+
+		protected abstract void GetWindowContentScale(IntPtr window, out float xScale, out float yScale);
+
+		public void GetContentScale(out float xScale, out float yScale) {
+			GetWindowContentScale(_window, out xScale, out yScale);
 		}
 
 		#region WindowClose Event
@@ -286,7 +292,7 @@
 		protected abstract void DestroyWindow(IntPtr window);
 
 		protected override void DisposeUnmanaged() {
-			DestroyWindow(_window);
+			//DestroyWindow(_window);
 		}
 	}
 }

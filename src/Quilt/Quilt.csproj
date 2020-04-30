@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netcoreapp3.1</TargetFramework>
@@ -7,8 +7,10 @@
 	</PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Quilt.Abstractions\Quilt.Abstractions.csproj" />
     <ProjectReference Include="..\Quilt.GL\Quilt.GL.csproj" />
     <ProjectReference Include="..\Quilt.GLFW\Quilt.GLFW.csproj" />
+    <ProjectReference Include="..\Quilt.Unmanaged\Quilt.Unmanaged.csproj" />
     <ProjectReference Include="..\Quilt.VG\Quilt.VG.csproj" />
     <ProjectReference Include="..\Quilt.Typography\Quilt.Typography.csproj" />
   </ItemGroup>
@@ -21,5 +23,32 @@
   <ItemGroup>
     <EmbeddedResource Include="UI/Shaders/lines.vert" />
     <EmbeddedResource Include="UI/Shaders/lines.frag" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

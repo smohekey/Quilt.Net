@@ -1,6 +1,4 @@
-﻿using System.Xml;
-using System.Linq;
-namespace Quilt.GL {
+﻿namespace Quilt.GL {
 	using System;
 	using System.Collections.Generic;
 	using System.IO;
@@ -14,16 +12,16 @@ namespace Quilt.GL {
 
 	[UnmanagedObject(CallingConvention = CallingConvention.Cdecl, Prefix = "gl")]
 	public abstract class GLContext : GLObject {
-		private readonly DebugMessageCallback _debugMessage;
+		//private readonly DebugMessageCallback _debugMessage;
 
 		protected GLContext(UnmanagedLibrary library) : base(library, null!, 0) {
-			DebugMessageCallback(_debugMessage = new DebugMessageCallback(HandleDebugMessage), IntPtr.Zero);
-			DebugMessageControl(DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, 0, null, true);
+			//DebugMessageCallback(_debugMessage = new DebugMessageCallback(HandleDebugMessage), IntPtr.Zero);
+			//DebugMessageControl(DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, 0, null, true);
 
 #if DEBUG
-			foreach (var name in Enum.GetNames(typeof(StringName))) {
-				Console.WriteLine(GetString(Enum.Parse<StringName>(name)));
-			}
+			// foreach (var name in Enum.GetNames(typeof(StringName))) {
+			// 	Console.WriteLine(GetString(Enum.Parse<StringName>(name)));
+			// }
 #endif
 		}
 
@@ -130,6 +128,10 @@ namespace Quilt.GL {
 			CheckError();
 		}
 
+		public void Uniform(int location, Vector2 v) {
+			Uniform(location, v.X, v.Y);
+		}
+
 		protected abstract void Uniform3f(int location, float v0, float v1, float v2);
 		public void Uniform(int location, float v0, float v1, float v2) {
 			Uniform3f(location, v0, v1, v2);
@@ -137,11 +139,19 @@ namespace Quilt.GL {
 			CheckError();
 		}
 
+		public void Uniform(int location, Vector3 v) {
+			Uniform(location, v.X, v.Y, v.Z);
+		}
+
 		protected abstract void Uniform4f(int location, float v0, float v1, float v2, float v3);
 		public void Uniform(int location, float v0, float v1, float v2, float v3) {
 			Uniform4f(location, v0, v1, v2, v3);
 
 			CheckError();
+		}
+
+		public void Uniform(int location, Vector4 v) {
+			Uniform(location, v.X, v.Y, v.Z, v.W);
 		}
 
 		protected abstract void Uniform1i(int location, int v0);
@@ -474,7 +484,14 @@ namespace Quilt.GL {
 		public void PolygonMode(FaceSelection faceSelection, PolygonMode mode) {
 			_PolygonMode(faceSelection, mode);
 		}
-		public abstract void DrawArrays(DrawMode mode, int first, GLsizei count);
+
+		[UnmanagedMethod(Name = "glDrawArrays")]
+		protected abstract void _DrawArrays(DrawMode mode, int first, GLsizei count);
+		public void DrawArrays(DrawMode mode, int first, GLsizei count) {
+			_DrawArrays(mode, first, count);
+
+			CheckError();
+		}
 
 		protected abstract void DrawElements(DrawMode mode, GLsizei count, DataType type, GLsizei offset);
 		public void DrawElements(DrawMode mode, int count, DataType type, int offset) {
@@ -509,6 +526,7 @@ namespace Quilt.GL {
 		}
 
 		[UnmanagedMethod(Name = "glGetString")]
+		[return: MarshalAs(UnmanagedType.LPWStr)]
 		protected abstract string _GetString(StringName name);
 
 		public string GetString(StringName name) {

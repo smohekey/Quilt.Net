@@ -1,4 +1,4 @@
-namespace Quilt.VG {
+﻿namespace Quilt.VG {
 	using System.Numerics;
 
 	public struct Color {
@@ -21,6 +21,8 @@ namespace Quilt.VG {
 				((float)a) / 256
 			);
 		}
+
+		public static implicit operator Vector4(Color color) => color._vector;
 
 		public static readonly Color AliceBlue = new Color(240, 248, 255, 255);
 		public static readonly Color LightSalmon = new Color(255, 160, 122, 255);
